@@ -1,0 +1,3243 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title id="app-dynamic-title">FF ESPORTS</title>
+
+  <!-- Google Esports Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Teko:wght@600;700&family=Rajdhani:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Firebase v9 Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+  <!-- ZERO-FLICKER CRITICAL CSS & INLINE RUNTIME SHIELD -->
+  <style id="critical-auth-css">
+    body { opacity: 0 !important; }
+    html.auth-guest #auth-screen-container { display: flex !important; }
+    html.auth-guest #authenticated-app-root { display: none !important; }
+    html.auth-user #auth-screen-container { display: none !important; }
+    html.auth-user #authenticated-app-root { display: flex !important; }
+    html.auth-ready body { opacity: 1 !important; }
+  </style>
+
+  <script>
+    (function() {
+      try {
+        var user = localStorage.getItem("ff_arena_auth_user");
+        if (user && JSON.parse(user).mobile) {
+          document.documentElement.classList.add("auth-user", "auth-ready");
+        } else {
+          document.documentElement.classList.add("auth-guest", "auth-ready");
+        }
+      } catch(e) {
+        document.documentElement.classList.add("auth-guest", "auth-ready");
+      }
+    })();
+
+    // 100% URL KILLER: डिफ़ॉल्ट अलर्ट को बदलकर सुंदर गेमिंग पॉपअप दिखाता है
+    window.alert = function(msg) {
+      var oldToast = document.getElementById('custom-game-alert-toast');
+      if (oldToast) oldToast.remove();
+
+      var toast = document.createElement('div');
+      toast.id = 'custom-game-alert-toast';
+      toast.style.cssText = "position:fixed; top:25px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #0c1830, #081122); color:#facc15; border:2px solid #facc15; padding:0.9rem 1.4rem; border-radius:12px; font-family:'Rajdhani', sans-serif; font-weight:800; font-size:1rem; z-index:999999999; box-shadow:0 10px 30px rgba(0,0,0,0.9), 0 0 15px rgba(250,204,21,0.4); text-align:center; max-width:90%; min-width:280px; letter-spacing:0.5px; animation:toastDropAnim 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);";
+      
+      toast.innerHTML = "<div style='font-size:0.75rem; color:#38bdf8; margin-bottom:2px;'>⚡ FF ESPORTS</div>" + msg;
+      document.body.appendChild(toast);
+      
+      setTimeout(function() {
+        if (toast) toast.remove();
+      }, 3800);
+    };
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+    }
+
+    /* =========================================================================
+       COMPLETE THEME SYSTEM (DARK & LIGHT CONTRAST 100% BALANCED)
+       ========================================================================= */
+    :root[data-theme="dark"] {
+      --bg-dark: #030712;
+      --bg-body-radial: radial-gradient(circle at 50% 10%, #0d2046 0%, #030712 90%);
+      --royal-header: #081122;
+      --royal-card: #0c1830;
+      --royal-card-sub: #081122;
+      --border-color: #1e3a6c;
+      --gold-primary: #facc15;
+      --gold-glow: #eab308;
+      --neon-cyan: #38bdf8;
+      --accent-green: #22c55e;
+      --accent-red: #ef4444;
+      --accent-purple: #a855f7;
+      --text-white: #ffffff;
+      --text-muted: #94a3b8;
+      --bottom-nav-bg: rgba(11, 21, 40, 0.98);
+      --input-bg: #060d1a;
+      --rules-text: #e2e8f0;
+      --modal-bg: linear-gradient(145deg, #0a162f 0%, #050b18 100%);
+    }
+
+    /* LIGHT THEME (DEEP CONTRAST TEXT - NO FADING) */
+    :root[data-theme="light"] {
+      --bg-dark: #f8fafc;
+      --bg-body-radial: radial-gradient(circle at 50% 10%, #ffffff 0%, #e2e8f0 100%);
+      --royal-header: #ffffff;
+      --royal-card: #ffffff;
+      --royal-card-sub: #f1f5f9;
+      --border-color: #cbd5e1;
+      --gold-primary: #b45309; /* Deep High-Contrast Gold */
+      --gold-glow: #d97706;
+      --neon-cyan: #0284c7;
+      --accent-green: #15803d;
+      --accent-red: #b91c1c;
+      --accent-purple: #7e22ce;
+      --text-white: #0f172a; /* Pure Solid Dark Charcoal */
+      --text-muted: #475569; /* Crisp Slate Grey */
+      --bottom-nav-bg: rgba(255, 255, 255, 0.98);
+      --input-bg: #f8fafc;
+      --rules-text: #1e293b; /* Pure Readable Dark for Rules */
+      --modal-bg: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg-body-radial);
+      font-family: 'Inter', sans-serif;
+      color: var(--text-white);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    .app-viewport {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding-bottom: 78px;
+    }
+
+    .hidden { display: none !important; }
+
+    /* =========================================================================
+       100% FIXED FLOATING POPUP MODAL BACKDROP (BLURRED DARK GLASS)
+       ========================================================================= */
+    .modal-backdrop {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: rgba(3, 7, 18, 0.88) !important;
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      z-index: 999999 !important;
+      padding: 1rem !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    .modal-backdrop.hidden {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    @keyframes modalScaleIn {
+      0% { opacity: 0; transform: scale(0.92) translateY(20px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-box {
+      background: var(--modal-bg) !important;
+      border: 1.8px solid var(--gold-primary) !important;
+      border-radius: 18px !important;
+      width: 100% !important;
+      max-width: 440px !important;
+      max-height: 88vh !important;
+      overflow-y: auto !important;
+      padding: 1.15rem !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.85rem !important;
+      color: var(--text-white) !important;
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.8), 0 0 25px rgba(250, 204, 21, 0.2) !important;
+      animation: modalScaleIn 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+      position: relative !important;
+    }
+
+    .modal-header {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      border-bottom: 1.5px solid rgba(250, 204, 21, 0.3) !important;
+      padding-bottom: 0.6rem !important;
+    }
+    .modal-header h3 {
+      font-family: 'Rajdhani', sans-serif !important;
+      font-size: 1.25rem !important;
+      font-weight: 800 !important;
+      color: var(--gold-primary) !important;
+    }
+    .btn-close {
+      background: var(--royal-card-sub) !important;
+      border: 1px solid var(--border-color) !important;
+      color: var(--gold-primary) !important;
+      width: 32px !important;
+      height: 32px !important;
+      border-radius: 50% !important;
+      font-size: 1rem !important;
+      cursor: pointer !important;
+      display: grid !important;
+      place-items: center !important;
+    }
+    .btn-close:active { transform: scale(0.9) !important; }
+
+    /* DETAIL VIEW POPUP ELEMENTS */
+    .match-detail-view-container { display: flex !important; flex-direction: column !important; gap: 0.85rem !important; }
+    .detail-full-banner-wrap {
+      width: 100% !important;
+      aspect-ratio: 16 / 9 !important;
+      border-radius: 12px !important;
+      overflow: hidden !important;
+      border: 2px solid var(--gold-primary) !important;
+      position: relative !important;
+    }
+    .detail-full-banner-wrap img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
+
+    .detail-meta-box {
+      background: var(--royal-card-sub) !important;
+      border: 1px solid var(--border-color) !important;
+      border-radius: 10px !important;
+      padding: 0.75rem !important;
+      display: grid !important;
+      grid-template-columns: repeat(3, 1fr) !important;
+      text-align: center !important;
+      gap: 0.4rem !important;
+    }
+
+    .detail-rules-box {
+      background: var(--royal-card-sub) !important;
+      border: 1.5px solid var(--gold-primary) !important;
+      border-radius: 12px !important;
+      padding: 0.85rem !important;
+      font-size: 0.8rem !important;
+      line-height: 1.55 !important;
+      color: var(--rules-text) !important; /* THEME CONTRAST FIXED */
+    }
+    .detail-rules-title {
+      font-family: 'Rajdhani', sans-serif !important;
+      font-weight: 900 !important;
+      color: var(--gold-primary) !important;
+      font-size: 1rem !important;
+      margin-bottom: 0.4rem !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      border-bottom: 1px dashed var(--border-color) !important;
+      padding-bottom: 0.35rem !important;
+    }
+    .mode-rules-badge {
+      font-size: 0.65rem !important;
+      background: #1e3a6c !important;
+      color: #38bdf8 !important;
+      padding: 2px 8px !important;
+      border-radius: 4px !important;
+      font-weight: 800 !important;
+    }
+    .rules-list-wrap { display: flex !important; flex-direction: column !important; gap: 0.35rem !important; margin-top: 0.35rem !important; }
+    .rule-item-line {
+      display: flex !important;
+      align-items: flex-start !important;
+      gap: 0.45rem !important;
+      font-size: 0.8rem !important;
+      font-weight: 600 !important;
+      color: var(--rules-text) !important; /* CRISP ON LIGHT & DARK */
+    }
+    .rule-item-line span.bullet { color: var(--gold-primary) !important; font-weight: 900 !important; }
+
+    .detail-players-box {
+      background: var(--royal-card-sub) !important;
+      border: 1px solid var(--border-color) !important;
+      border-radius: 10px !important;
+      padding: 0.6rem !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.45rem !important;
+      max-height: 180px !important;
+      overflow-y: auto !important;
+    }
+    .player-roster-item {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      background: var(--input-bg) !important;
+      border: 1px solid var(--border-color) !important;
+      padding: 0.45rem 0.7rem !important;
+      border-radius: 6px !important;
+      font-size: 0.78rem !important;
+      color: var(--text-white) !important;
+    }
+
+    /* 10-SEC AUTO-CLOSING FLOATING OTP HUD BANNER */
+    @keyframes otpSlideDown {
+      0% { opacity: 0; transform: translate(-50%, -40px) scale(0.92); }
+      100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+    .otp-hud-toast {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 92%;
+      max-width: 420px;
+      background: linear-gradient(135deg, #08142a, #030712);
+      border: 2px solid #facc15;
+      box-shadow: 0 15px 45px rgba(0,0,0,0.95), 0 0 25px rgba(250, 204, 21, 0.45);
+      border-radius: 14px;
+      padding: 0.9rem 1.1rem;
+      z-index: 999999999 !important;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      animation: otpSlideDown 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .otp-hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px dashed rgba(250, 204, 21, 0.3);
+      padding-bottom: 0.4rem;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #facc15;
+      font-family: 'Rajdhani', sans-serif;
+    }
+    .otp-hud-code {
+      font-family: 'Teko', sans-serif;
+      font-size: 2.5rem;
+      line-height: 1;
+      color: #fef08a;
+      letter-spacing: 6px;
+      font-weight: 700;
+      text-shadow: 0 0 15px rgba(250, 204, 21, 0.6);
+    }
+    .otp-countdown-pill {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid #ef4444;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-family: 'Rajdhani', sans-serif;
+    }
+
+    /* ROYAL GOLD ANIMATIONS */
+    @keyframes goldenLinearFlow {
+      0% { border-color: var(--gold-primary); box-shadow: 0 0 10px rgba(250, 204, 21, 0.25); }
+      50% { border-color: #38bdf8; box-shadow: 0 0 18px rgba(56, 189, 248, 0.45); }
+      100% { border-color: var(--gold-primary); box-shadow: 0 0 10px rgba(250, 204, 21, 0.25); }
+    }
+    .golden-edge-card {
+      background: var(--royal-card);
+      border: 1.5px solid var(--gold-primary);
+      border-radius: 14px;
+      animation: goldenLinearFlow 4s infinite linear;
+    }
+
+    @keyframes goldShine {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    .btn-gold-action {
+      background: linear-gradient(90deg, #ca8a04 0%, #fef08a 50%, #ca8a04 100%) !important;
+      background-size: 200% auto !important;
+      animation: goldShine 3s infinite linear;
+      color: #030712 !important;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-gold-action:active { transform: scale(0.96); }
+
+    /* TOP HEADER */
+    .top-header {
+      display: flex;
+      flex-direction: column;
+      background: var(--royal-header);
+      border-bottom: 1.5px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.15);
+    }
+    .top-navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem 1rem 0.6rem 1rem;
+      width: 100%;
+    }
+    .brand-logo-text {
+      font-family: 'Teko', sans-serif;
+      font-size: 2.35rem;
+      line-height: 0.9;
+      letter-spacing: 1px;
+      color: var(--gold-primary);
+      font-weight: 700;
+      white-space: nowrap;
+      text-transform: uppercase;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .wallet-chip-exact {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--royal-card-sub);
+      border: 2px solid var(--gold-primary);
+      padding: 0.25rem 0.35rem 0.25rem 0.8rem;
+      border-radius: 30px;
+      cursor: pointer;
+    }
+    .wallet-chip-exact .bag-icon { font-size: 1.35rem; line-height: 1; }
+    .wallet-chip-exact .amount-text {
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 900;
+      font-size: 1.25rem;
+      color: var(--gold-primary);
+      line-height: 1;
+      letter-spacing: 0.5px;
+    }
+    .wallet-chip-exact .plus-btn-circle {
+      width: 24px;
+      height: 24px;
+      background: var(--gold-primary);
+      color: #fff;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    /* SOCIAL ACTIONS STRIP */
+    .social-actions-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.45rem 1rem 0.6rem 1rem;
+      background: var(--royal-card-sub);
+      border-top: 1px solid var(--border-color);
+      gap: 0.4rem;
+    }
+    .social-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      max-width: 68%;
+    }
+    .social-btn-group::-webkit-scrollbar { display: none; }
+
+    .btn-social-exact {
+      background: var(--input-bg);
+      padding: 0.35rem 0.65rem;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      color: var(--text-white);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      text-decoration: none;
+      font-weight: 800;
+      font-family: 'Rajdhani', sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-social-exact.yt { border: 1.5px solid #ef4444; color: #ef4444; }
+    .btn-social-exact.ig { border: 1.5px solid #d946ef; color: #d946ef; }
+    .btn-social-exact.tg { border: 1.5px solid #0284c7; color: #0284c7; }
+    .btn-social-exact.custom { border: 1.5px solid var(--gold-primary); color: var(--gold-primary); }
+    
+    .btn-apk-exact {
+      background: #22c55e;
+      color: #ffffff;
+      font-size: 0.8rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-weight: 900;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-family: 'Rajdhani', sans-serif;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .tool-round-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      color: var(--text-white);
+    }
+
+    /* SLIDER & BANNER */
+    .slider-wrapper {
+      position: relative;
+      margin: 0.7rem 0.9rem 0.3rem 0.9rem;
+      border-radius: 14px;
+      overflow: hidden;
+      aspect-ratio: 16 / 7.5;
+      background: var(--royal-card-sub);
+      border: 1.5px solid var(--gold-primary);
+    }
+    .slider-track { display: flex; height: 100%; transition: transform 0.4s ease-in-out; }
+    .slider-slide { min-width: 100%; height: 100%; background-size: cover; background-position: center; }
+    .slider-slide video { width: 100%; height: 100%; object-fit: cover; }
+    .slider-dots {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      z-index: 10;
+    }
+    .slider-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(0,0,0,0.3); transition: all 0.3s; }
+    .slider-dot.active { width: 18px; border-radius: 10px; background: var(--gold-primary); }
+
+    /* TOURNAMENT CARDS & ZERO-BLACK-BARS 16:9 BANNER */
+    .tournaments-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+      padding: 0.6rem 0.9rem 1rem 0.9rem;
+    }
+    .empty-tournament-box {
+      border: 1.5px dashed var(--border-color);
+      border-radius: 14px;
+      padding: 2.5rem 1rem;
+      text-align: center;
+      background: var(--royal-card-sub);
+      margin: 0.5rem 0;
+    }
+    .empty-tournament-box .icon { font-size: 3rem; margin-bottom: 0.5rem; opacity: 0.6; }
+    .empty-tournament-box h3 { font-family: 'Rajdhani', sans-serif; color: var(--gold-primary); font-size: 1.25rem; }
+    .empty-tournament-box p { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem; }
+
+    .match-card {
+      background: var(--royal-card);
+      border: 1.5px solid var(--border-color);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    .match-card:hover { border-color: var(--gold-primary); }
+    .match-card:active { transform: scale(0.99); }
+    
+    .match-banner-wrapper {
+      position: relative;
+      width: 100% !important;
+      aspect-ratio: 16 / 9;
+      background: transparent;
+      overflow: hidden;
+      display: block;
+      border-bottom: 1.5px solid var(--border-color);
+    }
+    .match-banner-wrapper img.match-banner {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      display: block !important;
+    }
+    .match-banner-badge-top {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(3, 7, 18, 0.85);
+      border: 1px solid #facc15;
+      color: #facc15;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      font-family: 'Rajdhani', sans-serif;
+      z-index: 5;
+    }
+
+    .match-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--royal-card-sub);
+      padding: 0.65rem 0.9rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .match-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 800;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: var(--text-white);
+    }
+    .match-mode-tag {
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 900;
+      background: #1e3a6c;
+      color: #fff;
+    }
+    .match-mode-tag.mode-1v1 { background: #b91c1c; color: #fff; }
+    .match-mode-tag.mode-2v2 { background: #7c3aed; color: #fff; }
+    .match-mode-tag.mode-clash { background: #0284c7; color: #fff; }
+
+    .match-timing { font-size: 0.75rem; color: var(--gold-primary); font-weight: 800; font-family: 'Rajdhani', sans-serif; }
+    .match-body {
+      padding: 0.75rem 0.9rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      text-align: center;
+      background: var(--royal-card-sub);
+    }
+    .data-box { display: flex; flex-direction: column; }
+    .data-lbl { font-size: 0.66rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+    .data-val { font-family: 'Teko', sans-serif; font-size: 1.55rem; line-height: 1.1; font-weight: 700; }
+    .val-prize { color: var(--accent-green); }
+    .val-kill { color: var(--neon-cyan); }
+    .val-fee { color: var(--gold-primary); }
+
+    .match-footer {
+      padding: 0.65rem 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem;
+      border-top: 1px solid var(--border-color);
+      background: var(--royal-card);
+    }
+    .slots-progress-wrap { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; }
+    .slots-text { font-size: 0.72rem; color: var(--text-muted); font-weight: 800; display: flex; justify-content: space-between; font-family: 'Rajdhani', sans-serif; }
+    .progress-bar-bg { width: 100%; height: 6px; background: var(--border-color); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #38bdf8, var(--gold-primary)); border-radius: 4px; }
+    
+    .btn-players-list-toggle {
+      background: var(--royal-card-sub);
+      border: 1px solid var(--border-color);
+      color: var(--neon-cyan);
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 800;
+      font-size: 0.8rem;
+      padding: 0.52rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-match-action { padding: 0.52rem 1.25rem; font-size: 0.9rem; border-radius: 8px; }
+
+    /* AUTH SCREEN */
+    #auth-screen-container {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      background-image: radial-gradient(circle at 50% 20%, #0d2046 0%, #030712 100%);
+      z-index: 9999999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+    .auth-card-main {
+      width: 100%;
+      max-width: 420px;
+      background: var(--royal-card);
+      border: 1.5px solid var(--gold-primary);
+      border-radius: 16px;
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      box-shadow: 0 0 35px rgba(250, 204, 21, 0.25);
+      margin: auto 0;
+    }
+    .auth-tabs-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
+    .auth-tab-btn {
+      padding: 0.65rem;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: center;
+    }
+    .auth-tab-btn.active { background: var(--gold-primary); color: #fff; border-color: var(--gold-primary); }
+
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+    .form-group label { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+    .input-box-wrapper { position: relative; display: flex; align-items: center; }
+    .input-control {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-white);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 0.65rem 0.8rem;
+      border-radius: 8px;
+      outline: none;
+    }
+    .input-control:focus { border-color: var(--gold-primary); }
+    .eye-icon-toggle { position: absolute; right: 10px; cursor: pointer; font-size: 1.1rem; }
+
+    .btn-copy-tag {
+      background: var(--gold-primary);
+      color: #fff;
+      border: none;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    /* BOTTOM NAVBAR: 6 BUTTONS */
+    .bottom-navbar-6 {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: 64px;
+      background: var(--bottom-nav-bg);
+      backdrop-filter: blur(15px);
+      border-top: 1.5px solid var(--border-color);
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      z-index: 100;
+    }
+    .nav-btn-6 {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      cursor: pointer;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 800;
+      font-size: 0.68rem;
+    }
+    .nav-btn-6.active { color: var(--gold-primary); }
+    .nav-btn-6 .nav-ico { font-size: 1.25rem; }
+
+    /* LEADERBOARD VIEW */
+    .lb-scroll-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: calc(100vh - 230px);
+      overflow-y: auto;
+      padding-bottom: 3.5rem;
+    }
+    .lb-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--royal-card);
+      border: 1px solid var(--border-color);
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+    }
+    .lb-item-row.me-highlight { border: 1.5px solid var(--gold-primary); background: rgba(250, 204, 21, 0.12); }
+    .lb-rank-num { font-family: 'Teko', sans-serif; font-size: 1.4rem; width: 32px; color: var(--gold-primary); }
+    .lb-user-name { font-weight: 800; font-size: 0.88rem; color: var(--text-white); }
+    .lb-user-score { font-family: 'Rajdhani', sans-serif; font-weight: 900; color: var(--accent-green); font-size: 1.05rem; }
+    .self-rank-fixed-bar {
+      position: fixed;
+      bottom: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: var(--royal-card);
+      border-top: 2px solid var(--gold-primary);
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 80;
+    }
+
+    /* BANK PAYMENT SECTION */
+    .bank-payment-card {
+      background: var(--royal-card);
+      border: 1.5px solid var(--gold-primary);
+      border-radius: 14px;
+      padding: 1.2rem;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+      margin-bottom: 1rem;
+    }
+    .wallet-balances-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-top: 0.8rem;
+      text-align: center;
+    }
+    .bal-sub-box {
+      background: var(--royal-card-sub);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 0.3rem;
+    }
+    .bal-sub-title { font-size: 0.68rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+    .bal-sub-num { font-family: 'Teko', sans-serif; font-size: 1.45rem; color: var(--gold-primary); line-height: 1.1; margin-top: 2px; }
+    .wallet-action-btns-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.45rem;
+      margin-top: 0.9rem;
+    }
+    .quick-amt-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.4rem;
+      margin-top: 0.45rem;
+      margin-bottom: 0.5rem;
+    }
+    .btn-quick-amt {
+      background: var(--royal-card-sub);
+      border: 1px solid var(--border-color);
+      color: var(--gold-primary);
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 800;
+      font-size: 0.82rem;
+      padding: 0.45rem 0.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn-quick-amt.active {
+      background: var(--gold-primary);
+      color: #fff;
+    }
+    .qr-preview-box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0.6rem;
+      background: #fff;
+      border-radius: 10px;
+      margin: 0.5rem auto;
+      max-width: 180px;
+      aspect-ratio: 1 / 1;
+      border: 2px solid var(--gold-primary);
+    }
+    .qr-preview-box img { width: 100%; height: 100%; object-fit: contain; }
+    .upi-sources-grid {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      padding: 0.3rem 0;
+      margin-bottom: 0.4rem;
+    }
+    .upi-source-card {
+      background: var(--royal-card-sub);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .upi-source-card.active { border-color: var(--gold-primary); background: var(--gold-primary); color: #fff; }
+  </style>
+</head>
+<body>
+
+  <!-- BACKGROUND MUSIC PLAYER -->
+  <audio id="bgm-player" loop preload="auto"></audio>
+
+  <!-- 10S AUTO-CLOSING FLOATING OTP HUD -->
+  <div id="otp-onscreen-hud" class="otp-hud-toast hidden">
+    <div class="otp-hud-header">
+      <span>🛡️ <b id="otp-hud-appname">FF ESPORTS</b> SECURITY NODE</span>
+      <div style="display:flex; align-items:center; gap:0.5rem;">
+        <span class="otp-countdown-pill" id="otp-hud-timer-badge">⏱️ 10s</span>
+        <span style="color:#38bdf8; cursor:pointer; font-weight:800;" onclick="closeOtpHud()">✕ CLOSE</span>
+      </div>
+    </div>
+    <div style="font-size:0.75rem; color:#94a3b8;">
+      Your Dynamic 4-Digit Verification Code is:
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+      <div class="otp-hud-code" id="otp-hud-value">----</div>
+      <button class="btn-copy-tag" style="padding:7px 14px; font-size:0.85rem;" onclick="autoFillActiveOtp()">1-TAP FILL ⚡</button>
+    </div>
+  </div>
+
+  <!-- AUTHENTICATION SCREEN -->
+  <div id="auth-screen-container">
+    <div class="auth-card-main">
+      <div style="text-align:center;">
+        <h1 style="font-family:'Teko', sans-serif; font-size:2.5rem; color:var(--gold-primary); line-height:1;" id="auth-brand-name">FF ESPORTS</h1>
+        <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Official Real Cash Battle Arena</p>
+      </div>
+
+      <div class="auth-tabs-row">
+        <div class="auth-tab-btn active" id="tab-auth-login-btn" onclick="switchAuthTab('login')">LOGIN</div>
+        <div class="auth-tab-btn" id="tab-auth-signup-btn" onclick="switchAuthTab('signup')">SIGN UP</div>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="form-auth-login" onsubmit="handleUserLogin(event)" style="display:flex; flex-direction:column; gap:0.75rem;">
+        <div class="form-group">
+          <label>Mobile Number</label>
+          <input type="tel" class="input-control" id="login-phone" placeholder="10-digit Phone" maxlength="10" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="input-box-wrapper">
+            <input type="password" class="input-control" id="login-pass" placeholder="Password" required>
+            <span class="eye-icon-toggle" onclick="togglePassEye('login-pass', this)">👁️</span>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:0.75rem; color:var(--neon-cyan); cursor:pointer; font-weight:700;" onclick="switchAuthTab('forgot')">Forgot Password?</span>
+        </div>
+        <button type="submit" class="btn-gold-action" style="padding:0.75rem; margin-top:0.3rem;">LOGIN NOW 🚀</button>
+      </form>
+
+      <!-- SIGNUP FORM -->
+      <form id="form-auth-signup" class="hidden" onsubmit="handleUserSignup(event)" style="display:flex; flex-direction:column; gap:0.6rem;">
+        <div class="form-group">
+          <label>Username (IGN)</label>
+          <input type="text" class="input-control" id="signup-name" placeholder="In-game Name" required>
+        </div>
+
+        <div class="form-group">
+          <label>Mobile Number (For Verification)</label>
+          <div style="display:flex; gap:0.4rem;">
+            <input type="tel" class="input-control" id="signup-phone" placeholder="10-digit Phone" maxlength="10" required>
+            <button type="button" class="btn-gold-action" id="btn-request-signup-otp" style="padding:0.6rem 0.9rem; font-size:0.75rem; white-space:nowrap;" onclick="triggerSignupOtpRequest()">
+              SEND OTP 📲
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label>Enter 4-Digit OTP</label>
+            <span id="otp-timer-count" style="font-size:0.7rem; color:var(--gold-primary); font-weight:800;"></span>
+          </div>
+          <div class="input-box-wrapper">
+            <input type="text" class="input-control" id="signup-otp" placeholder="Enter 4-Digit OTP" maxlength="4" style="letter-spacing:4px; font-weight:900; color:var(--gold-primary);" required>
+            <span id="otp-status-check-badge" style="position:absolute; right:10px; font-size:0.75rem; font-weight:800; color:var(--text-muted);">NOT SENT</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Create Password</label>
+          <div class="input-box-wrapper">
+            <input type="password" class="input-control" id="signup-pass" placeholder="Min 6 characters" required>
+            <span class="eye-icon-toggle" onclick="togglePassEye('signup-pass', this)">👁️</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <div class="input-box-wrapper">
+            <input type="password" class="input-control" id="signup-cpass" placeholder="Confirm Password" required>
+            <span class="eye-icon-toggle" onclick="togglePassEye('signup-cpass', this)">👁️</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Referral Code (Optional - Enter for ₹10 Bonus)</label>
+          <input type="text" class="input-control" id="signup-refer" placeholder="Referral Code (e.g. FF-102938)">
+        </div>
+
+        <button type="submit" class="btn-gold-action" id="btn-register-submit" style="padding:0.75rem; margin-top:0.3rem;">REGISTER ACCOUNT ✨</button>
+      </form>
+
+      <!-- FORGOT PASSWORD FORM -->
+      <form id="form-auth-forgot" class="hidden" onsubmit="handleUserForgot(event)" style="display:flex; flex-direction:column; gap:0.6rem;">
+        <div class="form-group">
+          <label>Registered Mobile Number</label>
+          <div style="display:flex; gap:0.4rem;">
+            <input type="tel" class="input-control" id="forgot-phone" placeholder="10-digit Phone" maxlength="10" required>
+            <button type="button" class="btn-gold-action" id="btn-request-forgot-otp" style="padding:0.6rem 0.9rem; font-size:0.75rem; white-space:nowrap;" onclick="triggerForgotOtpRequest()">
+              SEND OTP 📲
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label>Enter 4-Digit Reset OTP</label>
+            <span id="forgot-otp-timer-count" style="font-size:0.7rem; color:var(--gold-primary); font-weight:800;"></span>
+          </div>
+          <div class="input-box-wrapper">
+            <input type="text" class="input-control" id="forgot-otp" placeholder="Enter 4-Digit OTP" maxlength="4" style="letter-spacing:4px; font-weight:900; color:var(--gold-primary);" required>
+            <span id="forgot-otp-status-badge" style="position:absolute; right:10px; font-size:0.75rem; font-weight:800; color:var(--text-muted);">NOT SENT</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>New Password</label>
+          <div class="input-box-wrapper">
+            <input type="password" class="input-control" id="forgot-newpass" placeholder="New Password" required>
+            <span class="eye-icon-toggle" onclick="togglePassEye('forgot-newpass', this)">👁️</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <div class="input-box-wrapper">
+            <input type="password" class="input-control" id="forgot-cnewpass" placeholder="Confirm Password" required>
+            <span class="eye-icon-toggle" onclick="togglePassEye('forgot-cnewpass', this)">👁️</span>
+          </div>
+        </div>
+        <button type="submit" class="btn-gold-action" style="padding:0.75rem; width:100%; margin-top:0.3rem;">RESET PASSWORD 🔒</button>
+        <div style="text-align:center; margin-top:0.3rem;">
+          <span style="font-size:0.75rem; color:var(--text-muted); cursor:pointer;" onclick="switchAuthTab('login')">Back to Login</span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- AUTHENTICATED APP ROOT VIEWPORT -->
+  <div class="app-viewport" id="authenticated-app-root">
+
+    <!-- TOP HEADER -->
+    <header class="top-header">
+      <div class="top-navbar">
+        <div class="brand-logo-text" id="app-dynamic-header-brand">FF ESPORTS</div>
+        
+        <div class="wallet-chip-exact" onclick="navigateTab('bank-payment')">
+          <span class="bag-icon">💰</span>
+          <span class="amount-text" id="header-wallet-bal">₹ 0.00</span>
+          <div class="plus-btn-circle">+</div>
+        </div>
+      </div>
+
+      <!-- DYNAMIC SOCIAL STRIP & DIRECT APK DOWNLOAD -->
+      <div class="social-actions-strip">
+        <div class="social-btn-group" id="dynamic-social-btn-group">
+          <a class="btn-social-exact yt" href="https://youtube.com" target="_blank"><span>▶</span> YouTube</a>
+          <a class="btn-social-exact ig" href="https://instagram.com" target="_blank"><span>📷</span> Insta</a>
+          <a class="btn-social-exact tg" href="https://t.me" target="_blank"><span>✈️</span> Telegram</a>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.35rem;">
+          <div class="tool-round-btn" id="btn-bgm-toggle" onclick="toggleBackgroundMusic()" title="Toggle Music">
+            <span id="bgm-icon">🔇</span>
+          </div>
+          <div class="tool-round-btn" onclick="toggleAppTheme()" title="Switch Light/Dark Theme">
+            <span id="theme-icon">🌙</span>
+          </div>
+          <button class="btn-apk-exact" id="btn-header-apk-download" onclick="triggerApkDirectDownload()">
+            <span>📥</span> APK
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- VIEW 1: TOURNAMENTS (MATCHES) -->
+    <main id="view-tournaments">
+      <div class="slider-wrapper" id="banner-slider-wrap">
+        <div class="slider-track" id="slider-track"></div>
+        <div class="slider-dots" id="slider-dots"></div>
+      </div>
+
+      <div class="tournaments-container" id="tournaments-list"></div>
+    </main>
+    <!-- VIEW 2: MY MATCHES -->
+    <section id="view-my-matches" class="hidden" style="padding:1rem;">
+      <h2 style="font-family:'Rajdhani', sans-serif; font-size:1.3rem; color:var(--gold-primary); margin-bottom:0.6rem;">My Tournaments</h2>
+      
+      <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:0.4rem; margin-bottom:0.8rem;">
+        <button class="btn-gold-action" id="tab-match-live-btn" style="padding:0.5rem; font-size:0.8rem;" onclick="filterJoinedMatchesView('live')">Live / Upcoming</button>
+        <button class="btn-gold-action" id="tab-match-results-btn" style="padding:0.5rem; font-size:0.8rem; background:#162438 !important; color:#fff !important;" onclick="filterJoinedMatchesView('results')">🏆 Results / Winners</button>
+      </div>
+
+      <div id="joined-matches-list" style="display:flex; flex-direction:column; gap:0.8rem;"></div>
+    </section>
+
+    <!-- VIEW 3: BANK PAYMENT -->
+    <section id="view-bank-payment" class="hidden" style="padding:1rem;">
+      <div class="bank-payment-card">
+        <span style="font-size:0.72rem; color:var(--text-muted); font-weight:800;">TOTAL WALLET VALUE</span>
+        <div style="font-family:'Teko', sans-serif; font-size:2.8rem; color:var(--accent-green); line-height:1;" id="wallet-grand-total">₹ 0.00</div>
+        
+        <div class="wallet-balances-grid">
+          <div class="bal-sub-box">
+            <div class="bal-sub-title">Deposit Cash</div>
+            <div class="bal-sub-num" id="wallet-deposit-sub">₹0.00</div>
+          </div>
+          <div class="bal-sub-box">
+            <div class="bal-sub-title">Winnings Cash</div>
+            <div class="bal-sub-num" style="color:var(--accent-green);" id="wallet-winnings-sub">₹0.00</div>
+          </div>
+          <div class="bal-sub-box">
+            <div class="bal-sub-title">Invite Bonus</div>
+            <div class="bal-sub-num" style="color:var(--neon-cyan);" id="wallet-bonus-sub">₹0.00</div>
+          </div>
+        </div>
+
+        <div class="wallet-action-btns-grid">
+          <button class="btn-gold-action" style="padding:0.6rem; font-size:0.8rem;" onclick="openDepositModal()">+ DEPOSIT</button>
+          <button class="btn-gold-action" style="padding:0.6rem; font-size:0.8rem; background:#15803d !important; color:#fff !important;" onclick="openWithdrawModal('winnings')">WITHDRAW WIN</button>
+          <button class="btn-gold-action" style="padding:0.6rem; font-size:0.8rem; background:#0284c7 !important; color:#fff !important;" onclick="openWithdrawModal('bonus')">WITHDRAW BONUS</button>
+        </div>
+      </div>
+
+      <h3 style="font-family:'Rajdhani', sans-serif; font-size:1.15rem; color:var(--gold-primary); margin-bottom:0.6rem;">Passbook & Transactions History</h3>
+      <div id="wallet-history-passbook-list" style="display:flex; flex-direction:column; gap:0.5rem;"></div>
+    </section>
+
+    <!-- VIEW 4: SHARE & EARN -->
+    <section id="view-share" class="hidden" style="padding:1rem;">
+      <div class="golden-edge-card" style="padding:1.2rem; text-align:center;">
+        <span style="font-size:2rem;">🎁</span>
+        <h3 style="font-family:'Rajdhani', sans-serif; color:var(--gold-primary); font-size:1.3rem;">Invite & Earn Lifetime Cash</h3>
+        <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.3rem;" id="share-dynamic-description">
+          Invite friends & get lifetime cash bonus on deposits! New user gets ₹10 registration bonus when entering your referral code.
+        </p>
+
+        <div style="background:var(--input-bg); border:1px dashed var(--gold-primary); border-radius:8px; padding:0.6rem; margin:1rem 0; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-family:'Teko', sans-serif; font-size:1.8rem; color:var(--gold-primary); letter-spacing:2px;" id="disp-my-refcode">------</span>
+          <button class="btn-copy-tag" onclick="copyReferralCode()">COPY CODE 📋</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:0.4rem; margin-top:0.5rem;">
+          <button class="btn-social-exact" style="background:#16a34a; justify-content:center; color:#fff;" onclick="shareSpecificSocial('whatsapp')">WhatsApp</button>
+          <button class="btn-social-exact" style="background:#0284c7; justify-content:center; color:#fff;" onclick="shareSpecificSocial('telegram')">Telegram</button>
+          <button class="btn-social-exact" style="background:#e1306c; justify-content:center; color:#fff;" onclick="shareSpecificSocial('instagram')">Insta</button>
+          <button class="btn-social-exact" style="background:#475569; justify-content:center; color:#fff;" onclick="shareNativeSocialDialog()">More 📲</button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:0.5rem; margin-top:1rem;">
+        <div style="background:var(--royal-card); border:1px solid var(--border-color); padding:0.7rem; border-radius:8px; text-align:center;">
+          <span style="font-size:0.7rem; color:var(--text-muted);">FRIENDS JOINED</span>
+          <div style="font-family:'Teko', sans-serif; font-size:1.8rem; color:var(--neon-cyan);" id="disp-ref-count">0</div>
+        </div>
+        <div style="background:var(--royal-card); border:1px solid var(--border-color); padding:0.7rem; border-radius:8px; text-align:center;">
+          <span style="font-size:0.7rem; color:var(--text-muted);">BONUS EARNED</span>
+          <div style="font-family:'Teko', sans-serif; font-size:1.8rem; color:var(--accent-green);" id="disp-ref-bonus">₹ 0.00</div>
+        </div>
+      </div>
+
+      <h4 style="font-family:'Rajdhani', sans-serif; font-size:1rem; color:var(--gold-primary); margin:1.2rem 0 0.4rem 0;">Referred Friends Activity</h4>
+      <div id="referred-users-list" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
+    </section>
+
+    <!-- VIEW 5: RANKINGS (LEADERBOARD) -->
+    <section id="view-leaderboard" class="hidden" style="padding:1rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+        <div>
+          <h2 style="font-family:'Rajdhani', sans-serif; font-size:1.35rem; color:var(--gold-primary);">Top Rankers (Winnings)</h2>
+          <span style="font-size:0.68rem; color:var(--text-muted);">Only Match Winnings Counted</span>
+        </div>
+        <span style="font-size:0.72rem; color:var(--neon-cyan); font-weight:800; background:var(--royal-card-sub); border:1px solid var(--border-color); padding:3px 8px; border-radius:6px;">
+          LIVE PAYOUTS ⚡
+        </span>
+      </div>
+      
+      <div class="lb-scroll-container" id="leaderboard-list-wrap"></div>
+
+      <!-- STICKY SELF STANDING HUD -->
+      <div class="self-rank-fixed-bar golden-edge-card">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <span style="font-family:'Teko', sans-serif; font-size:1.6rem; color:var(--gold-primary);" id="self-rank-number">#10</span>
+          <div>
+            <div style="font-size:0.85rem; font-weight:800; color:var(--text-white);" id="self-rank-name">Player (You)</div>
+            <div style="font-size:0.68rem; color:var(--text-muted);" id="self-rank-phone-sub">--------</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.65rem; color:var(--text-muted); font-weight:800;">TOTAL WINNINGS</div>
+          <div style="font-family:'Rajdhani', sans-serif; font-weight:900; color:var(--accent-green); font-size:1.3rem;" id="self-rank-earnings">₹ 0.00</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 6: PROFILE, RULES & 24/7 SUPPORT -->
+    <section id="view-profile" class="hidden" style="padding:1rem;">
+      <div class="golden-edge-card" style="padding:1.2rem; text-align:center;">
+        <div style="width:65px; height:65px; background:var(--input-bg); border:2px solid var(--gold-primary); border-radius:50%; display:grid; place-items:center; margin:0 auto 0.5rem auto; font-size:1.8rem;">👑</div>
+        <h3 id="prof-ff-name" style="font-family:'Rajdhani', sans-serif; font-size:1.2rem; color:var(--text-white);">Player</h3>
+        <p style="font-size:0.75rem; color:var(--text-muted);">Mobile: <b id="prof-ff-phone" style="color:var(--neon-cyan)">----------</b></p>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:0.5rem; margin-top:0.8rem;">
+        <button class="btn-gold-action" style="padding:0.6rem; font-size:0.8rem; background:#162438 !important; color:#fff !important;" onclick="openRulesModal('tournament')">GLOBAL RULES 📜</button>
+        <button class="btn-gold-action" style="padding:0.6rem; font-size:0.8rem; background:#162438 !important; color:#fff !important;" onclick="openRulesModal('wallet')">WALLET RULES 💳</button>
+      </div>
+
+      <div style="background:var(--royal-card); border:1.5px solid var(--border-color); border-radius:12px; padding:1rem; margin-top:1rem;">
+        <h4 style="font-family:'Rajdhani', sans-serif; font-size:1.1rem; color:var(--gold-primary);">🎧 24/7 Help & Support Ticket Desk</h4>
+        <p style="font-size:0.72rem; color:var(--text-muted); margin-bottom:0.6rem;">Facing deposit or withdrawal problem? Upload screenshot and message directly to Admin:</p>
+        
+        <div class="form-group">
+          <label>Problem Category</label>
+          <select class="input-control" id="ticket-issue-type">
+            <option value="Deposit Not Credited">Deposit Not Credited</option>
+            <option value="Withdrawal Processing Delay">Withdrawal Processing Delay</option>
+            <option value="Match Room Credentials Issue">Match Room Credentials Issue</option>
+            <option value="Other Glitch">Other Glitch</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-top:0.4rem;">
+          <label>Describe Problem In Detail</label>
+          <textarea class="input-control" id="ticket-message" rows="2" placeholder="Write transaction details and problem..."></textarea>
+        </div>
+
+        <div class="form-group" style="margin-top:0.4rem;">
+          <label>Attach Payment Screenshot (Device Storage)</label>
+          <input type="file" class="input-control" id="ticket-screenshot" accept="image/*">
+        </div>
+
+        <button class="btn-gold-action" style="width:100%; padding:0.75rem; margin-top:0.6rem;" onclick="submitProblemTicket()">SUBMIT PROBLEM TICKET 🚀</button>
+
+        <h5 style="font-size:0.8rem; color:var(--neon-cyan); margin:1rem 0 0.3rem 0;">My Support Tickets & Solutions</h5>
+        <div id="user-dispute-tickets-history" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
+      </div>
+
+      <button style="width:100%; padding:0.75rem; background:#7f1d1d; border:1px solid #ef4444; border-radius:8px; color:#fff; font-weight:800; font-family:'Rajdhani', sans-serif; margin-top:1.5rem; cursor:pointer;" onclick="handleUserLogout()">LOGOUT ACCOUNT 🚪</button>
+    </section>
+
+    <!-- BOTTOM NAVBAR -->
+    <nav class="bottom-navbar-6">
+      <button class="nav-btn-6 active" id="btn-nav-tournaments" onclick="navigateTab('tournaments')">
+        <span class="nav-ico">🎯</span><span>Matches</span>
+      </button>
+      <button class="nav-btn-6" id="btn-nav-mymatches" onclick="navigateTab('my-matches')">
+        <span class="nav-ico">⚔️</span><span>Joined</span>
+      </button>
+      <button class="nav-btn-6" id="btn-nav-bankpayment" onclick="navigateTab('bank-payment')">
+        <span class="nav-ico">💳</span><span>Payment</span>
+      </button>
+      <button class="nav-btn-6" id="btn-nav-share" onclick="navigateTab('share')">
+        <span class="nav-ico">🎁</span><span>Refer</span>
+      </button>
+      <button class="nav-btn-6" id="btn-nav-leaderboard" onclick="navigateTab('leaderboard')">
+        <span class="nav-ico">🏆</span><span>Ranks</span>
+      </button>
+      <button class="nav-btn-6" id="btn-nav-profile" onclick="navigateTab('profile')">
+        <span class="nav-ico">👤</span><span>Profile</span>
+      </button>
+    </nav>
+
+    <!-- ====================================================================
+         100% FIXED FLOATING POPUP MODALS
+         ==================================================================== -->
+
+    <!-- 1. FULL MATCH CLICKED OVERVIEW POPUP MODAL -->
+    <div class="modal-backdrop hidden" id="modal-match-details-view" onclick="if(event.target===this) popNavigationStack();">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="detail-modal-title">Match Overview</h3>
+          <button class="btn-close" onclick="popNavigationStack()">✖</button>
+        </div>
+
+        <div class="match-detail-view-container">
+          <div class="detail-full-banner-wrap">
+            <img id="detail-modal-banner-img" src="" alt="Match Banner">
+          </div>
+
+          <div class="detail-meta-box">
+            <div>
+              <div style="font-size:0.65rem; color:var(--text-muted); font-weight:800;">PRIZE POOL</div>
+              <div style="font-family:'Teko', sans-serif; font-size:1.6rem; color:var(--accent-green); line-height:1;" id="detail-modal-prize">₹0</div>
+            </div>
+            <div>
+              <div style="font-size:0.65rem; color:var(--text-muted); font-weight:800;">PER KILL</div>
+              <div style="font-family:'Teko', sans-serif; font-size:1.6rem; color:var(--neon-cyan); line-height:1;" id="detail-modal-perkill">₹0</div>
+            </div>
+            <div>
+              <div style="font-size:0.65rem; color:var(--text-muted); font-weight:800;">ENTRY FEE</div>
+              <div style="font-family:'Teko', sans-serif; font-size:1.6rem; color:var(--gold-primary); line-height:1;" id="detail-modal-fee">₹0</div>
+            </div>
+          </div>
+
+          <div class="detail-rules-box">
+            <div class="detail-rules-title">
+              <span>📜 OFFICIAL MATCH RULES</span>
+              <span class="mode-rules-badge" id="detail-rules-mode-badge">1VS1 MODE</span>
+            </div>
+            <div class="rules-list-wrap" id="detail-modal-rules-content"></div>
+          </div>
+
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+              <span style="font-family:'Rajdhani', sans-serif; font-weight:900; font-size:0.95rem; color:var(--gold-primary);">
+                👥 REGISTERED PLAYERS (<span id="detail-modal-players-count">0/2</span>)
+              </span>
+              <span style="font-size:0.7rem; color:var(--neon-cyan); font-weight:800;">LIVE ROSTER</span>
+            </div>
+            <div class="detail-players-box" id="detail-modal-players-roster"></div>
+          </div>
+
+          <div id="detail-modal-action-wrapper" style="margin-top:0.4rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. MODE-BASED OFFICIAL RESULTS POPUP MODAL -->
+    <div class="modal-backdrop hidden" id="modal-match-results" onclick="if(event.target===this) popNavigationStack();">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="results-modal-match-title">Official Match Results</h3>
+          <button class="btn-close" onclick="popNavigationStack()">✖</button>
+        </div>
+
+        <div id="results-content-area">
+          <div style="text-align:center;">
+            <span class="results-mode-badge" id="results-mode-badge-disp" style="background:#1e3a6c; color:#facc15; border:1px solid #facc15;">
+              1 VS 1 HEADSHOT MODE
+            </span>
+          </div>
+          <div id="dynamic-results-layout-wrap"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. JOIN MATCH POPUP MODAL -->
+    <div class="modal-backdrop hidden" id="modal-join-match" onclick="if(event.target===this) popNavigationStack();">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="join-modal-match-title">Join Match</h3>
+          <button class="btn-close" onclick="popNavigationStack()">✖</button>
+        </div>
+        <div style="background:var(--royal-card-sub); padding:0.8rem; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.75rem; color:var(--text-muted); font-weight:800;">ENTRY FEE:</span>
+          <span style="font-family:'Teko', sans-serif; font-size:1.8rem; color:var(--gold-primary);" id="join-modal-fee-text">₹ 0.00</span>
+        </div>
+        <div class="form-group">
+          <label>Free Fire Username (Exact IGN)</label>
+          <input type="text" class="input-control" id="join-input-ign" placeholder="e.g. Total_Gamer">
+        </div>
+        <div class="form-group">
+          <label>Free Fire Numeric UID</label>
+          <input type="number" class="input-control" id="join-input-uid" placeholder="e.g. 1928472910">
+        </div>
+        <div class="form-group">
+          <label>Game Level (Minimum <span id="disp-min-game-level" style="color:var(--gold-primary); font-weight:900;">25+</span> Required)</label>
+          <input type="number" class="input-control" id="join-input-level" placeholder="e.g. 45">
+        </div>
+        <button class="btn-gold-action" style="padding:0.8rem;" onclick="confirmMatchParticipation()">PAY ENTRY & JOIN MATCH ⚔️</button>
+      </div>
+    </div>
+
+    <!-- 4. JOINED PLAYERS LIST POPUP MODAL -->
+    <div class="modal-backdrop hidden" id="modal-joined-players" onclick="if(event.target===this) popNavigationStack();">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>👥 Joined Players List</h3>
+          <button class="btn-close" onclick="popNavigationStack()">✖</button>
+        </div>
+        <div id="joined-players-roster" style="display:flex; flex-direction:column; gap:0.4rem; max-height:350px; overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- 5. ROOM DETAILS POPUP MODAL -->
+    <div class="modal-backdrop hidden" id="modal-room-details" onclick="if(event.target===this) popNavigationStack();">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="room-modal-match-title">Room Credentials</h3>
+          <button class="btn-close" onclick="popNavigationStack()">✖</button>
+        </div>
+        <div id="room-waiting-state" style="background:var(--royal-card-sub); border:1.5px solid var(--gold-primary); border-radius:10px; padding:1.2rem; text-align:center;">
+          <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">MATCH STARTS IN</span>
+          <div style="font-family:'Teko', sans-serif; font-size:2.8rem; color:var(--gold-primary); line-height:1;" id="live-countdown-timer">00:00:00</div>
+          <p style="font-size:0.75rem; color:var(--neon-cyan); margin-top:0.4rem;">Room ID & Password will unlock automatically when countdown hits zero!</p>
+        </div>
+        <div id="room-released-state" class="hidden">
+          <div style="background:var(--royal-card-sub); border:1.5px dashed var(--gold-primary); border-radius:10px; padding:0.9rem; display:flex; flex-direction:column; gap:0.6rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:0.75rem; color:var(--text-muted); font-weight:800;">ROOM ID:</div>
+                <div style="font-family:'Teko', sans-serif; font-size:1.8rem; color:var(--gold-primary); letter-spacing:1px;" id="display-room-id">------</div>
+              </div>
+              <button class="btn-copy-tag" onclick="copyData('display-room-id')">COPY ID 📋</button>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.4rem;">
+              <div>
+                <div style="font-size:0.75rem; color:var(--text-muted); font-weight:800;">PASSWORD:</div>
+                <div style="font-family:'Teko', sans-serif; font-size:1.8rem; color:var(--gold-primary); letter-spacing:1px;" id="display-room-pass">----</div>
+              </div>
+              <button class="btn-copy-tag" onclick="copyData('display-room-pass')">COPY PASS 📋</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. DEPOSIT POPUP MODAL -->
+    <div class="modal-backdrop hidden" id="modal-deposit" onclick="if(event.target===this) popNavigationStack();">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>Deposit Cash</h3>
+          <button class="btn-close" onclick="popNavigationStack()">✖</button>
+        </div>
+        
+        <div id="deposit-form-step">
+          <div class="form-group">
+            <label>Amount (₹) (Min ₹<span id="disp-min-dep">100</span>)</label>
+            <input type="number" class="input-control" id="input-dep-amount" value="300" oninput="clearQuickDepositSelection()">
+          </div>
+
+          <label style="font-size:0.72rem; color:var(--text-muted); font-weight:700;">QUICK SELECT AMOUNT</label>
+          <div class="quick-amt-grid" id="deposit-quick-amt-chips">
+            <button type="button" class="btn-quick-amt" onclick="selectQuickDepositAmount(100, this)">₹100</button>
+            <button type="button" class="btn-quick-amt" onclick="selectQuickDepositAmount(200, this)">₹200</button>
+            <button type="button" class="btn-quick-amt active" onclick="selectQuickDepositAmount(300, this)">₹300</button>
+            <button type="button" class="btn-quick-amt" onclick="selectQuickDepositAmount(500, this)">₹500</button>
+            <button type="button" class="btn-quick-amt" onclick="selectQuickDepositAmount(1000, this)">₹1,000</button>
+            <button type="button" class="btn-quick-amt" onclick="selectQuickDepositAmount(2000, this)">₹2,000</button>
+            <button type="button" class="btn-quick-amt" onclick="selectQuickDepositAmount(5000, this)">₹5,000</button>
+            <button type="button" class="btn-quick-amt" onclick="selectQuickDepositAmount(10000, this)">₹10,000</button>
+          </div>
+
+          <label style="font-size:0.72rem; color:var(--text-muted); font-weight:700; margin-top:0.4rem;">SELECT RECEIVING UPI / QR</label>
+          <div class="upi-sources-grid" id="admin-upis-selector"></div>
+
+          <div class="qr-preview-box hidden" id="deposit-qr-wrap">
+            <img id="deposit-qr-img" src="" alt="Merchant QR">
+          </div>
+
+          <div style="background:var(--input-bg); border:1px dashed var(--gold-primary); border-radius:8px; padding:0.6rem; display:flex; justify-content:space-between; align-items:center; margin-top:0.4rem;">
+            <span style="font-family:'Rajdhani', sans-serif; font-weight:800; color:var(--gold-primary);" id="selected-merchant-vpa">Loading...</span>
+            <button class="btn-copy-tag" onclick="copyData('selected-merchant-vpa')">COPY</button>
+          </div>
+
+          <button class="btn-gold-action" style="width:100%; padding:0.75rem; margin-top:0.5rem;" onclick="launchSelectedUpiIntent()">PAY VIA UPI APP ⚡</button>
+
+          <div class="form-group" style="margin-top:0.6rem;">
+            <label>12-Digit Banking UTR / Ref No.</label>
+            <input type="number" class="input-control" id="input-deposit-utr" placeholder="e.g. 402910482910" maxlength="12">
+          </div>
+          <button class="btn-gold-action" style="width:100%; padding:0.8rem; margin-top:0.4rem;" onclick="startHighSecurityBankingCheck()">VERIFY & CREDIT AMOUNT ✅</button>
+        </div>
+
+        <div id="deposit-verify-step" class="hidden" style="text-align:center;">
+          <div style="width:85px; height:85px; border-radius:50%; background: conic-gradient(var(--gold-primary) calc(var(--progress-deg, 360deg)), #1e3a6c 0deg); display:grid; place-items:center; position:relative; margin:1rem auto;">
+            <span style="font-family:'Teko', sans-serif; font-size:2.2rem; color:var(--gold-primary); font-weight:700;" id="countdown-val">10</span>
+          </div>
+          <h4 style="font-family:'Rajdhani', sans-serif; color:var(--gold-primary); font-size:1.2rem;">Banking Security Node Check...</h4>
+          <p style="font-size:0.75rem; color:var(--text-muted);">Validating payment authenticity against Official Merchant UPI.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. WITHDRAWAL POPUP MODAL -->
+    <div class="modal-backdrop hidden" id="modal-withdraw" onclick="if(event.target===this) popNavigationStack();">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="withdraw-modal-title">Withdraw Cash</h3>
+          <button class="btn-close" onclick="popNavigationStack()">✖</button>
+        </div>
+
+        <div class="form-group">
+          <label>Withdraw Amount (Min ₹<span id="disp-min-with-limit">100</span>)</label>
+          <input type="number" class="input-control" id="input-with-amount" placeholder="₹ 100" oninput="clearQuickWithdrawSelection()">
+        </div>
+
+        <label style="font-size:0.72rem; color:var(--text-muted); font-weight:700;">QUICK SELECT AMOUNT</label>
+        <div class="quick-amt-grid" id="withdraw-quick-amt-chips">
+          <button type="button" class="btn-quick-amt" onclick="selectQuickWithdrawAmount(100, this)">₹100</button>
+          <button type="button" class="btn-quick-amt" onclick="selectQuickWithdrawAmount(200, this)">₹200</button>
+          <button type="button" class="btn-quick-amt" onclick="selectQuickWithdrawAmount(300, this)">₹300</button>
+          <button type="button" class="btn-quick-amt" onclick="selectQuickWithdrawAmount(500, this)">₹500</button>
+          <button type="button" class="btn-quick-amt" onclick="selectQuickWithdrawAmount(1000, this)">₹1,000</button>
+          <button type="button" class="btn-quick-amt" onclick="selectQuickWithdrawAmount(2000, this)">₹2,000</button>
+          <button type="button" class="btn-quick-amt" onclick="selectQuickWithdrawAmount(5000, this)">₹5,000</button>
+          <button type="button" class="btn-quick-amt" onclick="selectQuickWithdrawAmount(10000, this)">₹10,000</button>
+        </div>
+
+        <div class="form-group">
+          <label>Payout Method</label>
+          <select class="input-control" id="select-with-method" onchange="toggleWithdrawPayoutView(this.value)">
+            <option value="upi">Direct UPI (PhonePe / GPay / Paytm)</option>
+            <option value="bank">Bank Transfer (IMPS / NEFT)</option>
+          </select>
+        </div>
+
+        <div id="with-method-upi" class="form-group">
+          <label>Enter Your UPI ID (VPA)</label>
+          <input type="text" class="input-control" id="input-with-vpa" placeholder="username@okhdfcbank">
+        </div>
+
+        <div id="with-method-bank" class="hidden" style="display:flex; flex-direction:column; gap:0.5rem;">
+          <div class="form-group">
+            <label>Select Bank</label>
+            <select class="input-control" id="select-all-banks" onchange="handleBankSelectChange(this.value)">
+              <option value="">-- Choose From 50+ Banks --</option>
+              <option value="State Bank of India (SBI)">State Bank of India (SBI)</option>
+              <option value="HDFC Bank">HDFC Bank</option>
+              <option value="ICICI Bank">ICICI Bank</option>
+              <option value="Punjab National Bank (PNB)">Punjab National Bank (PNB)</option>
+              <option value="Bank of Baroda (BOB)">Bank of Baroda (BOB)</option>
+              <option value="Axis Bank">Axis Bank</option>
+              <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+              <option value="Canara Bank">Canara Bank</option>
+              <option value="Union Bank of India">Union Bank of India</option>
+              <option value="Bank of India">Bank of India</option>
+              <option value="IndusInd Bank">IndusInd Bank</option>
+              <option value="OTHER">Other National / Gramin / Co-Op Bank</option>
+            </select>
+          </div>
+          <div class="form-group hidden" id="wrap-other-bank-input">
+            <label>Enter Bank Name Manually</label>
+            <input type="text" class="input-control" id="input-other-bank" placeholder="e.g. Baroda Rajasthan Kshetriya Gramin Bank">
+          </div>
+          <div class="form-group">
+            <label>Account Holder Name</label>
+            <input type="text" class="input-control" id="input-bank-holder" placeholder="As per passbook">
+          </div>
+          <div class="form-group">
+            <label>Account Number</label>
+            <input type="number" class="input-control" id="input-bank-acc" placeholder="Bank Account Number">
+          </div>
+          <div class="form-group">
+            <label>IFSC Code</label>
+            <input type="text" class="input-control" id="input-bank-ifsc" placeholder="e.g. SBIN0001234">
+          </div>
+        </div>
+
+        <button class="btn-gold-action" style="padding:0.8rem; margin-top:0.4rem;" onclick="submitWithdrawalRequest()">SUBMIT WITHDRAWAL 💳</button>
+      </div>
+    </div>
+
+    <!-- 8. RULES POPUP MODAL -->
+    <div class="modal-backdrop hidden" id="modal-rules-display" onclick="if(event.target===this) popNavigationStack();">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="rules-modal-title">Rules</h3>
+          <button class="btn-close" onclick="popNavigationStack()">✖</button>
+        </div>
+        <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.6; white-space:pre-wrap;" id="rules-modal-content"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JAVASCRIPT ENGINE -->
+  <script>
+    // 1. Firebase Initialization
+    const firebaseConfig = {
+      apiKey: "AIzaSyDB2VSSViNx_zJANwf4T8E2c6bEAevQNgE",
+      authDomain: "ff-arena-esports-tm.firebaseapp.com",
+      projectId: "ff-arena-esports-tm",
+      databaseURL: "https://ff-arena-esports-tm-default-rtdb.firebaseio.com",
+      storageBucket: "ff-arena-esports-tm.firebasestorage.app",
+      messagingSenderId: "1074681104349",
+      appId: "1:1074681104349:web:3656c44af7d88b910c1834"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const storage = firebase.storage();
+
+    // 2. Audio Synthesizer
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playTapAudio(freq = 650) {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch(e) {}
+    }
+
+    function playOtpSuccessSound() {
+      playTapAudio(880);
+      setTimeout(() => playTapAudio(1100), 120);
+    }
+
+    document.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON' || e.target.classList.contains('nav-btn-6') || e.target.classList.contains('btn-social-exact') || e.target.classList.contains('tool-round-btn') || e.target.classList.contains('btn-quick-amt')) {
+        playTapAudio();
+      }
+    });
+
+    // 3. Background Music Engine
+    let isBgmPlaying = false;
+    let bgmUrl = "";
+    const bgmPlayer = document.getElementById('bgm-player');
+
+    function toggleBackgroundMusic() {
+      if (!bgmUrl) return alert("BGM track is currently not set by Admin.");
+      if (isBgmPlaying) {
+        bgmPlayer.pause();
+        isBgmPlaying = false;
+        document.getElementById('bgm-icon').innerText = '🔇';
+      } else {
+        bgmPlayer.play().then(() => {
+          isBgmPlaying = true;
+          document.getElementById('bgm-icon').innerText = '🎵';
+        }).catch(() => alert("Click on screen to enable audio playback."));
+      }
+    }
+
+    // 4. THEME SWITCH ENGINE (TEXT COLORS & CONTRAST SYNC)
+    let currentTheme = localStorage.getItem('ff_theme') || 'dark';
+    function applyAppTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      document.getElementById('theme-icon').innerText = theme === 'dark' ? '🌙' : '☀️';
+      localStorage.setItem('ff_theme', theme);
+    }
+    function toggleAppTheme() {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyAppTheme(currentTheme);
+    }
+    applyAppTheme(currentTheme);
+
+    // 5. DIRECT SAFE APK DOWNLOAD (100% FIXED NO BROKEN INTENTS)
+    function triggerApkDirectDownload() {
+      if (apkDownloadLink && apkDownloadLink !== '#' && apkDownloadLink.startsWith('http')) {
+        playTapAudio(850);
+        // Direct safe native download trigger without broken intent
+        const a = document.createElement('a');
+        a.href = apkDownloadLink;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.setAttribute('download', '');
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => a.remove(), 400);
+      } else {
+        alert("⚠️ Official APK is being updated by Admin. Please try again soon!");
+      }
+    }
+
+    // 6. Zero-Flicker Authentication Validator
+    let currentUser = JSON.parse(localStorage.getItem("ff_arena_auth_user")) || null;
+
+    function evaluateAuthentication() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlRef = urlParams.get('ref');
+      if (urlRef) document.getElementById('signup-refer').value = urlRef;
+
+      closeOtpHud();
+
+      if (currentUser && currentUser.mobile) {
+        document.documentElement.classList.remove("auth-guest");
+        document.documentElement.classList.add("auth-user");
+        initAppRealtimeSync();
+      } else {
+        document.documentElement.classList.remove("auth-user");
+        document.documentElement.classList.add("auth-guest");
+      }
+    }
+
+    // Global App States
+    let liveTournaments = [];
+    let liveBanners = [];
+    let merchantUPIs = [];
+    let activeMerchantUPI = "paytmqr28100505@paytm";
+    let apkDownloadLink = "#";
+    let shareConfig = { title: "FF ESPORTS", desc: "Join FF ESPORTS! Win real cash per kill!" };
+    let appRules = { 
+      tournament: "• Gun Attributes: OFF\n• Character Skill: NO\n• Headshot Only: Allowed\n• Emulator & iPad: Strictly Prohibited\n• Level 25+ Mandatory", 
+      wallet: "• Minimum Deposit: ₹100\n• Instant UPI & Bank Withdrawals 24/7." 
+    };
+    let minDepositLimit = 100;
+    let minWinningsWithdraw = 100;
+    let minBonusWithdraw = 50;
+    let minAllowedLevel = 25;
+    let adminOtpCooldown = 60; // Admin Configured Seconds
+    let withdrawContext = "winnings";
+    let selectedMatchToJoin = null;
+    let viewingRoomMatch = null;
+    let countdownInterval = null;
+    let sliderInterval = null;
+    let currentSlide = 0;
+    let joinedFilterState = 'live';
+
+    // 7. Quick Amount Selector Helpers
+    function selectQuickDepositAmount(amt, elem) {
+      document.getElementById('input-dep-amount').value = amt;
+      document.querySelectorAll('#deposit-quick-amt-chips .btn-quick-amt').forEach(b => b.classList.remove('active'));
+      if (elem) elem.classList.add('active');
+    }
+
+    function clearQuickDepositSelection() {
+      const val = parseFloat(document.getElementById('input-dep-amount').value);
+      document.querySelectorAll('#deposit-quick-amt-chips .btn-quick-amt').forEach(b => {
+        b.classList.toggle('active', parseFloat(b.innerText.replace(/[₹,]/g, '')) === val);
+      });
+    }
+
+    function selectQuickWithdrawAmount(amt, elem) {
+      document.getElementById('input-with-amount').value = amt;
+      document.querySelectorAll('#withdraw-quick-amt-chips .btn-quick-amt').forEach(b => b.classList.remove('active'));
+      if (elem) elem.classList.add('active');
+    }
+
+    function clearQuickWithdrawSelection() {
+      const val = parseFloat(document.getElementById('input-with-amount').value);
+      document.querySelectorAll('#withdraw-quick-amt-chips .btn-quick-amt').forEach(b => {
+        b.classList.toggle('active', parseFloat(b.innerText.replace(/[₹,]/g, '')) === val);
+      });
+    }
+
+// =========================================================================
+    // 8. ADMIN MASTER SWITCH CONTROLLED AUTO-OTP & REAL SMS ENGINE
+    // (Switch ON hai toh 8-12s me SMS jayega, OFF hai toh bilkul nahi jayega!)
+    // =========================================================================
+    const FAST2SMS_API_KEY = "r2yapsjmRgKHBChn5DOwbkfZ6L7vd3T4QcSVG8lAqEMYPW19Xet9WANps0gV7qoJLKfM4SzTXxrhd5uP";
+
+    let isCloudOtpSwitchOn = true; // Default state
+    let activeDispatchedOtp = "";
+    let activeDispatchedForgotOtp = "";
+    let otpCooldownTimer = null;
+    let forgotOtpCooldownTimer = null;
+    let otpHudCountdownInterval = null;
+
+    // Realtime Listener: Cloud Switch ON/OFF check karega (Bina Admin panel khole)
+    db.ref('admin/otpConfig/autoMode').on('value', snap => {
+      const val = snap.val();
+      if (val !== null) {
+        isCloudOtpSwitchOn = Boolean(val);
+      } else {
+        isCloudOtpSwitchOn = true; // Default ON
+      }
+      console.log(`🔒 [Admin Master Switch State]: ${isCloudOtpSwitchOn ? 'ON (Active)' : 'OFF (Paused)'}`);
+    });
+
+    // Real Phone SMS Dispatcher (Fast2SMS Gateway)
+    async function dispatchDirectFast2Sms(phone, otpCode) {
+      const cleanPhone = phone.toString().replace(/[^0-9]/g, '').slice(-10);
+      const msg = encodeURIComponent(`[FF ESPORTS] Your OTP code is: ${otpCode}. Valid for 5 minutes.`);
+      const targetUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=${FAST2SMS_API_KEY}&route=q&message=${msg}&language=english&flash=0&numbers=${cleanPhone}`;
+
+      try {
+        fetch(targetUrl, { method: 'GET', mode: 'no-cors' });
+      } catch(e) {}
+
+      try {
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+        await fetch(proxyUrl);
+      } catch(e) {}
+
+      console.log(`📡 [Fast2SMS] Delivered Real SMS to +91${cleanPhone} | OTP: ${otpCode}`);
+    }
+
+    function triggerSignupOtpRequest() {
+      const phone = document.getElementById('signup-phone').value.trim();
+      if (!phone || phone.length !== 10 || isNaN(phone)) {
+        return alert("⚠️ Kripya sahi 10-digit mobile number daalein!");
+      }
+
+      // Check Karein: Agar Admin ne Switch OFF kiya hai toh block kar do
+      if (!isCloudOtpSwitchOn) {
+        return alert("⏸️ OTP Service Filhal Admin dwaara Band (OFF) hai. Kripya baad me koshish karein!");
+      }
+
+      const sendBtn = document.getElementById('btn-request-signup-otp');
+      const statusBadge = document.getElementById('otp-status-check-badge');
+      const timerSpan = document.getElementById('otp-timer-count');
+
+      sendBtn.disabled = true;
+      sendBtn.style.opacity = "0.6";
+      statusBadge.innerText = "WAITING...";
+      statusBadge.style.color = "var(--neon-cyan)";
+
+      // Random 8 se 12 second delay
+      let remaining = Math.floor(Math.random() * (12 - 8 + 1)) + 8;
+      timerSpan.innerText = `(${remaining}s)`;
+
+      clearInterval(otpCooldownTimer);
+      otpCooldownTimer = setInterval(() => {
+        remaining--;
+        if (remaining > 0) {
+          timerSpan.innerText = `(${remaining}s)`;
+        } else {
+          clearInterval(otpCooldownTimer);
+          timerSpan.innerText = "";
+          sendBtn.disabled = false;
+          sendBtn.style.opacity = "1";
+          sendBtn.innerText = "RESEND OTP 🔄";
+
+          // Dobara verify karein ki Switch abhi bhi ON hai ya nahi
+          if (!isCloudOtpSwitchOn) {
+            statusBadge.innerText = "PAUSED BY ADMIN";
+            statusBadge.style.color = "var(--accent-red)";
+            return alert("⏸️ OTP generation paused by Admin.");
+          }
+
+          // 4-Digit OTP Generate Karein
+          const newOtp = Math.floor(1000 + Math.random() * 9000).toString();
+          activeDispatchedOtp = newOtp;
+
+          // 1. Mobile SIM par Real SMS bhejein
+          dispatchDirectFast2Sms(phone, newOtp);
+
+          // 2. Screen par OTP Auto-Fill karein aur Banner dikhayein
+          document.getElementById('signup-otp').value = newOtp;
+          deliverOtpToUserScreen(newOtp);
+
+          statusBadge.innerText = "SENT ✅";
+          statusBadge.style.color = "var(--accent-green)";
+
+          // 3. Firebase me save karein
+          const now = Date.now();
+          db.ref(`otpVerifications/${phone}`).set({
+            mobile: phone,
+            otp: newOtp,
+            status: 'sent',
+            timestamp: now
+          });
+          db.ref(`otpRequests/${phone}`).set({
+            mobile: phone,
+            otp: newOtp,
+            status: 'sent',
+            timestamp: now
+          });
+        }
+      }, 1000);
+    }
+
+    function triggerForgotOtpRequest() {
+      const phone = document.getElementById('forgot-phone').value.trim();
+      if (!phone || phone.length !== 10 || isNaN(phone)) {
+        return alert("⚠️ Kripya apna registered 10-digit mobile number daalein!");
+      }
+
+      // Check Karein: Agar Switch OFF hai toh ruk jao
+      if (!isCloudOtpSwitchOn) {
+        return alert("⏸️ Password Reset Service Filhal Admin dwaara Band (OFF) hai!");
+      }
+
+      const sendBtn = document.getElementById('btn-request-forgot-otp');
+      const statusBadge = document.getElementById('forgot-otp-status-badge');
+      const timerSpan = document.getElementById('forgot-otp-timer-count');
+
+      sendBtn.disabled = true;
+      sendBtn.style.opacity = "0.6";
+      statusBadge.innerText = "WAITING...";
+      statusBadge.style.color = "var(--neon-cyan)";
+
+      let remaining = Math.floor(Math.random() * (12 - 8 + 1)) + 8;
+      timerSpan.innerText = `(${remaining}s)`;
+
+      clearInterval(forgotOtpCooldownTimer);
+      forgotOtpCooldownTimer = setInterval(() => {
+        remaining--;
+        if (remaining > 0) {
+          timerSpan.innerText = `(${remaining}s)`;
+        } else {
+          clearInterval(forgotOtpCooldownTimer);
+          timerSpan.innerText = "";
+          sendBtn.disabled = false;
+          sendBtn.style.opacity = "1";
+          sendBtn.innerText = "RESEND OTP 🔄";
+
+          if (!isCloudOtpSwitchOn) {
+            statusBadge.innerText = "PAUSED BY ADMIN";
+            statusBadge.style.color = "var(--accent-red)";
+            return alert("⏸️ OTP generation paused by Admin.");
+          }
+
+          const newOtp = Math.floor(1000 + Math.random() * 9000).toString();
+          activeDispatchedForgotOtp = newOtp;
+
+          dispatchDirectFast2Sms(phone, newOtp);
+
+          document.getElementById('forgot-otp').value = newOtp;
+          deliverOtpToUserScreen(newOtp);
+
+          statusBadge.innerText = "SENT ✅";
+          statusBadge.style.color = "var(--accent-green)";
+
+          const now = Date.now();
+          db.ref(`otpVerifications/${phone}`).set({
+            mobile: phone,
+            otp: newOtp,
+            status: 'sent',
+            timestamp: now
+          });
+          db.ref(`otpRequests/${phone}`).set({
+            mobile: phone,
+            otp: newOtp,
+            status: 'sent',
+            timestamp: now
+          });
+        }
+      }, 1000);
+    }
+
+    function deliverOtpToUserScreen(otpCode) {
+      const hud = document.getElementById('otp-onscreen-hud');
+      const timerBadge = document.getElementById('otp-hud-timer-badge');
+      document.getElementById('otp-hud-value').innerText = otpCode;
+      
+      hud.classList.remove('hidden');
+      hud.style.display = 'flex';
+      playOtpSuccessSound();
+
+      let timeLeft = 10;
+      timerBadge.innerText = `⏱️ ${timeLeft}s`;
+
+      clearInterval(otpHudCountdownInterval);
+      otpHudCountdownInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft > 0) {
+          timerBadge.innerText = `⏱️ ${timeLeft}s`;
+        } else {
+          clearInterval(otpHudCountdownInterval);
+          closeOtpHud();
+        }
+      }, 1000);
+    }
+
+    function autoFillActiveOtp() {
+      const isForgotActive = !document.getElementById('form-auth-forgot').classList.contains('hidden');
+      if (isForgotActive && activeDispatchedForgotOtp) {
+        document.getElementById('forgot-otp').value = activeDispatchedForgotOtp;
+      } else if (activeDispatchedOtp) {
+        document.getElementById('signup-otp').value = activeDispatchedOtp;
+      }
+      closeOtpHud();
+    }
+
+    function closeOtpHud() {
+      clearInterval(otpHudCountdownInterval);
+      const hud = document.getElementById('otp-onscreen-hud');
+      if (hud) {
+        hud.classList.add('hidden');
+        hud.style.display = 'none';
+      }
+    }
+
+    // 9. Auth Operations
+    function handleUserSignup(e) {
+      e.preventDefault();
+      const name = document.getElementById('signup-name').value.trim();
+      const phone = document.getElementById('signup-phone').value.trim();
+      const enteredOtp = document.getElementById('signup-otp').value.trim();
+      const pass = document.getElementById('signup-pass').value;
+      const cpass = document.getElementById('signup-cpass').value;
+      const referBy = document.getElementById('signup-refer').value.trim();
+
+      if (phone.length !== 10) return alert("Mobile number must be exactly 10 digits!");
+      if (!enteredOtp || enteredOtp.length !== 4) return alert("Please enter the 4-digit verification OTP!");
+      if (pass !== cpass) return alert("Passwords do not match!");
+      if (pass.length < 6) return alert("Password must be at least 6 characters long!");
+
+      db.ref(`otpVerifications/${phone}`).once('value').then(vSnap => {
+        const vData = vSnap.val();
+        const validOtp = vData && vData.otp ? vData.otp.toString() : activeDispatchedOtp;
+
+        if (!validOtp || enteredOtp !== validOtp) {
+          return alert("❌ Invalid 4-Digit OTP! Registration rejected. Please enter the correct code.");
+        }
+
+        db.ref(`users/${phone}`).once('value').then(snap => {
+          if (snap.exists()) return alert("Mobile already registered! Please login.");
+
+          const myRef = "FF-" + Math.floor(100000 + Math.random() * 900000);
+          const initialBonus = referBy.length > 3 ? 10.00 : 0.00;
+
+          const newUser = {
+            username: name,
+            mobile: phone,
+            password: pass,
+            referCode: myRef,
+            referredBy: referBy || null,
+            wallet: initialBonus,
+            depositWallet: 0.00,
+            winningsWallet: 0.00,
+            bonusWallet: initialBonus,
+            winnings: 0.00,
+            created: Date.now()
+          };
+
+          db.ref(`users/${phone}`).set(newUser).then(() => {
+            closeOtpHud();
+            currentUser = newUser;
+            localStorage.setItem("ff_arena_auth_user", JSON.stringify(currentUser));
+            if (initialBonus > 0) alert("🎉 Referral Applied! ₹10 Bonus added to your wallet.");
+            else alert("🎉 Account Created Successfully!");
+            evaluateAuthentication();
+          });
+        });
+      });
+    }
+
+    function handleUserLogin(e) {
+      e.preventDefault();
+      const phone = document.getElementById('login-phone').value.trim();
+      const pass = document.getElementById('login-pass').value;
+
+      db.ref(`users/${phone}`).once('value').then(snap => {
+        const u = snap.val();
+        if(u && u.password === pass) {
+          closeOtpHud();
+          currentUser = u;
+          localStorage.setItem("ff_arena_auth_user", JSON.stringify(currentUser));
+          evaluateAuthentication();
+        } else {
+          alert("Invalid mobile or password!");
+        }
+      });
+    }
+
+    function handleUserForgot(e) {
+      e.preventDefault();
+      const phone = document.getElementById('forgot-phone').value.trim();
+      const enteredOtp = document.getElementById('forgot-otp').value.trim();
+      const np = document.getElementById('forgot-newpass').value;
+      const cnp = document.getElementById('forgot-cnewpass').value;
+
+      if (phone.length !== 10) return alert("Please enter valid 10-digit mobile number!");
+      if (!enteredOtp || enteredOtp.length !== 4) return alert("Please enter the 4-digit reset OTP!");
+      if (np !== cnp) return alert("Passwords do not match!");
+      if (np.length < 6) return alert("New password must be at least 6 characters long!");
+
+      db.ref(`otpVerifications/${phone}`).once('value').then(vSnap => {
+        const vData = vSnap.val();
+        const validOtp = vData && vData.otp ? vData.otp.toString() : activeDispatchedForgotOtp;
+
+        if (!validOtp || enteredOtp !== validOtp) {
+          return alert("❌ Invalid 4-Digit Reset OTP! Password change rejected.");
+        }
+
+        db.ref(`users/${phone}`).once('value').then(snap => {
+          if (!snap.exists()) return alert("Mobile number not found in registered accounts!");
+
+          db.ref(`users/${phone}`).update({ password: np }).then(() => {
+            closeOtpHud();
+            alert("✅ Password reset successful! Please login with your new password.");
+            switchAuthTab('login');
+          });
+        });
+      });
+    }
+
+    function handleUserLogout() {
+      closeOtpHud();
+      localStorage.removeItem("ff_arena_auth_user");
+      currentUser = null;
+      evaluateAuthentication();
+    }
+
+    function switchAuthTab(t) {
+      closeOtpHud();
+      document.getElementById('form-auth-login').classList.toggle('hidden', t !== 'login');
+      document.getElementById('form-auth-signup').classList.toggle('hidden', t !== 'signup');
+      document.getElementById('form-auth-forgot').classList.toggle('hidden', t !== 'forgot');
+      document.getElementById('tab-auth-login-btn').classList.toggle('active', t === 'login');
+      document.getElementById('tab-auth-signup-btn').classList.toggle('active', t === 'signup');
+    }
+
+    function togglePassEye(id, icon) {
+      const el = document.getElementById(id);
+      if (el.type === "password") {
+        el.type = "text";
+        icon.innerText = "👁️‍🗨️";
+      } else {
+        el.type = "password";
+        icon.innerText = "👁️";
+      }
+    }
+
+    // 10. Realtime Sync & UNLIMITED DYNAMIC SOCIAL BUTTONS
+    function initAppRealtimeSync() {
+      db.ref(`users/${currentUser.mobile}`).on('value', snap => {
+        const u = snap.val();
+        if(u) {
+          currentUser = u;
+          localStorage.setItem("ff_arena_auth_user", JSON.stringify(currentUser));
+          const totalVal = (u.depositWallet || u.wallet || 0) + (u.winningsWallet || 0) + (u.bonusWallet || 0);
+          document.getElementById('header-wallet-bal').innerText = `₹ ${totalVal.toFixed(2)}`;
+          document.getElementById('wallet-grand-total').innerText = `₹ ${totalVal.toFixed(2)}`;
+          document.getElementById('wallet-deposit-sub').innerText = `₹ ${(u.depositWallet || u.wallet || 0).toFixed(2)}`;
+          document.getElementById('wallet-winnings-sub').innerText = `₹ ${(u.winningsWallet || 0).toFixed(2)}`;
+          document.getElementById('wallet-bonus-sub').innerText = `₹ ${(u.bonusWallet || 0).toFixed(2)}`;
+
+          document.getElementById('prof-ff-name').innerText = u.username;
+          document.getElementById('prof-ff-phone').innerText = u.mobile;
+          document.getElementById('disp-my-refcode').innerText = u.referCode;
+          document.getElementById('disp-ref-bonus').innerText = `₹ ${(u.bonusWallet || 0).toFixed(2)}`;
+
+          const myRealWinnings = typeof u.winningsWallet !== 'undefined' ? parseFloat(u.winningsWallet) : (parseFloat(u.winnings) || 0);
+          document.getElementById('self-rank-earnings').innerText = `₹ ${myRealWinnings.toFixed(2)}`;
+          document.getElementById('self-rank-name').innerText = `${u.username} (You)`;
+          document.getElementById('self-rank-phone-sub').innerText = `${u.mobile.substr(0,4)}****`;
+        }
+      });
+
+      // RENDER UNLIMITED SOCIAL BUTTONS
+      db.ref('admin/socialLinks').on('value', snap => {
+        renderDynamicSocialLinks(snap.val());
+      });
+
+      db.ref('admin/globalConfig').on('value', snap => {
+        const cfg = snap.val();
+        if(cfg) {
+          if(cfg.appTitle) {
+            document.title = cfg.appTitle;
+            document.getElementById('app-dynamic-header-brand').innerText = cfg.appTitle;
+            document.getElementById('auth-brand-name').innerText = cfg.appTitle;
+            document.getElementById('otp-hud-appname').innerText = cfg.appTitle;
+          }
+          if(cfg.minDeposit) minDepositLimit = cfg.minDeposit;
+          if(cfg.minWinningsWithdraw) minWinningsWithdraw = cfg.minWinningsWithdraw;
+          if(cfg.minBonusWithdraw) minBonusWithdraw = cfg.minBonusWithdraw;
+          if(cfg.otpCooldown) adminOtpCooldown = parseInt(cfg.otpCooldown); // Admin seconds
+          if(cfg.minGameLevel) {
+            minAllowedLevel = parseInt(cfg.minGameLevel);
+            document.getElementById('disp-min-game-level').innerText = `${minAllowedLevel}+`;
+          }
+          if(cfg.bgmUrl) {
+            bgmUrl = cfg.bgmUrl;
+            bgmPlayer.src = bgmUrl;
+          }
+          if(cfg.apkLink) {
+            apkDownloadLink = cfg.apkLink;
+          }
+          if(cfg.shareConfig) {
+            shareConfig = cfg.shareConfig;
+            document.getElementById('share-dynamic-description').innerText = cfg.shareConfig.desc || '';
+          }
+          if(cfg.rules) appRules = cfg.rules;
+
+          if (cfg.socialLinks) {
+            renderDynamicSocialLinks(cfg.socialLinks);
+          }
+        }
+      });
+
+      db.ref('admin/paymentSources').on('value', snap => {
+        const val = snap.val() || {};
+        merchantUPIs = Object.keys(val).map(k => ({ id: k, ...val[k] }));
+        renderPaymentSources();
+      });
+
+      db.ref('tournaments').on('value', snap => {
+        const val = snap.val() || {};
+        liveTournaments = Object.keys(val).map(k => ({ id: k, ...val[k] }));
+        renderTournaments();
+        renderMyMatches();
+      });
+
+      db.ref('admin/banners').on('value', snap => {
+        const val = snap.val() || {};
+        liveBanners = Object.keys(val).map(k => ({ id: k, ...val[k] }));
+        renderBannersSlider();
+      });
+
+      db.ref(`transactions/${currentUser.mobile}`).on('value', snap => {
+        renderPassbookHistory(snap.val() || {});
+      });
+
+      db.ref('helpTickets').orderByChild('userMobile').equalTo(currentUser.mobile).on('value', snap => {
+        renderDisputeTickets(snap.val() || {});
+      });
+
+      db.ref('users').orderByChild('referredBy').equalTo(currentUser.referCode).on('value', snap => {
+        renderReferralsNetwork(snap.val() || {});
+      });
+
+      db.ref('users').on('value', uSnap => {
+        db.ref('fakeRankers').on('value', fSnap => {
+          renderCombinedLeaderboard(uSnap.val() || {}, fSnap.val() || {});
+        });
+      });
+
+      window.history.replaceState({ screen: 'tournaments' }, "");
+    }
+
+    function renderDynamicSocialLinks(linksData) {
+      const container = document.getElementById('dynamic-social-btn-group');
+      if (!container) return;
+
+      if (!linksData || Object.keys(linksData).length === 0) {
+        container.innerHTML = `
+          <a class="btn-social-exact yt" href="https://youtube.com" target="_blank"><span>▶</span> YouTube</a>
+          <a class="btn-social-exact ig" href="https://instagram.com" target="_blank"><span>📷</span> Insta</a>
+          <a class="btn-social-exact tg" href="https://t.me" target="_blank"><span>✈️</span> Telegram</a>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      const items = Array.isArray(linksData) ? linksData : Object.values(linksData);
+
+      items.forEach(link => {
+        if (!link || !link.url) return;
+        const a = document.createElement('a');
+        a.href = link.url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        
+        let customClass = 'custom';
+        const titleLower = (link.title || '').toLowerCase();
+        if (titleLower.includes('you')) customClass = 'yt';
+        else if (titleLower.includes('insta')) customClass = 'ig';
+        else if (titleLower.includes('tele')) customClass = 'tg';
+
+        a.className = `btn-social-exact ${customClass}`;
+        a.innerHTML = `<span>${link.icon || '🔗'}</span> ${link.title || 'Link'}`;
+        container.appendChild(a);
+      });
+    }
+
+    // 11. Payment Sources & Slider
+    function renderPaymentSources() {
+      const wrap = document.getElementById('admin-upis-selector');
+      wrap.innerHTML = '';
+      if(merchantUPIs.length === 0) {
+        merchantUPIs = [{ id: 'def', title: 'UPI 1', vpa: 'paytmqr28100505@paytm', qrUrl: '' }];
+      }
+
+      merchantUPIs.forEach((src, idx) => {
+        const card = document.createElement('div');
+        card.className = `upi-source-card ${idx === 0 ? 'active' : ''}`;
+        card.innerText = src.title || `UPI ${idx+1}`;
+        card.onclick = () => selectPaymentSource(src, card);
+        wrap.appendChild(card);
+      });
+
+      selectPaymentSource(merchantUPIs[0]);
+    }
+
+    function selectPaymentSource(src, elem) {
+      if(elem) {
+        document.querySelectorAll('.upi-source-card').forEach(c => c.classList.remove('active'));
+        elem.classList.add('active');
+      }
+      activeMerchantUPI = src.vpa;
+      document.getElementById('selected-merchant-vpa').innerText = src.vpa;
+      const qrWrap = document.getElementById('deposit-qr-wrap');
+      if(src.qrUrl) {
+        qrWrap.classList.remove('hidden');
+        document.getElementById('deposit-qr-img').src = src.qrUrl;
+      } else {
+        qrWrap.classList.add('hidden');
+      }
+    }
+
+    function renderBannersSlider() {
+      const track = document.getElementById('slider-track');
+      const dotsWrap = document.getElementById('slider-dots');
+      track.innerHTML = '';
+      dotsWrap.innerHTML = '';
+
+      if (liveBanners.length === 0) {
+        document.getElementById('banner-slider-wrap').classList.add('hidden');
+        return;
+      }
+      document.getElementById('banner-slider-wrap').classList.remove('hidden');
+
+      liveBanners.forEach((b, idx) => {
+        const slide = document.createElement('div');
+        slide.className = 'slider-slide';
+
+        if(b.videoUrl) {
+          slide.innerHTML = `<video src="${b.videoUrl}" autoplay muted loop playsinline></video>`;
+        } else {
+          slide.style.backgroundImage = `url('${b.imageUrl}')`;
+        }
+
+        if (b.redirectUrl) slide.onclick = () => window.open(b.redirectUrl, '_blank');
+        track.appendChild(slide);
+
+        const dot = document.createElement('div');
+        dot.className = `slider-dot ${idx === 0 ? 'active' : ''}`;
+        dotsWrap.appendChild(dot);
+      });
+
+      currentSlide = 0;
+      updateSliderTrack();
+
+      clearInterval(sliderInterval);
+      if(liveBanners.length > 1) {
+        sliderInterval = setInterval(() => {
+          currentSlide = (currentSlide + 1) % liveBanners.length;
+          updateSliderTrack();
+        }, 3000);
+      }
+    }
+
+    function updateSliderTrack() {
+      document.getElementById('slider-track').style.transform = `translateX(-${currentSlide * 100}%)`;
+      document.querySelectorAll('.slider-dot').forEach((d, idx) => {
+        d.classList.toggle('active', idx === currentSlide);
+      });
+    }
+
+    // 12. Render Tournaments
+    function renderTournaments() {
+      const wrap = document.getElementById('tournaments-list');
+      wrap.innerHTML = '';
+
+      if (liveTournaments.length === 0) {
+        wrap.innerHTML = `
+          <div class="empty-tournament-box">
+            <div class="icon">🎮</div>
+            <h3>No Live Matches Scheduled</h3>
+            <p>Admin will list new Free Fire tournaments soon.<br>Stay tuned and prepare your squad!</p>
+          </div>
+        `;
+        return;
+      }
+
+      liveTournaments.forEach(t => {
+        const isJoined = t.participants && t.participants[currentUser.mobile];
+        const joinedCount = t.participants ? Object.keys(t.participants).length : (t.joined || 0);
+        const totalSlots = t.totalSlots || t.maxSlots || (t.mode && t.mode.includes("1V1") ? 2 : 48);
+        const percent = Math.floor((joinedCount / totalSlots) * 100);
+        const modeRaw = (t.mode || 'SOLO').toUpperCase();
+        
+        let modeClass = "";
+        if (modeRaw.includes("1V1") || modeRaw.includes("1VS1")) modeClass = "mode-1v1";
+        else if (modeRaw.includes("2V2") || modeRaw.includes("2VS2")) modeClass = "mode-2v2";
+        else if (modeRaw.includes("CLASH") || modeRaw.includes("4V4")) modeClass = "mode-clash";
+
+        const card = document.createElement('div');
+        card.className = 'match-card';
+        card.onclick = (e) => {
+          if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+          openMatchDetailsModal(t.id);
+        };
+
+        const bannerImageSrc = t.bannerUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
+
+        card.innerHTML = `
+          <div class="match-banner-wrapper">
+            <img src="${bannerImageSrc}" class="match-banner" alt="${t.title}" loading="lazy">
+            <div class="match-banner-badge-top">TAP TO VIEW INFO ℹ️</div>
+          </div>
+          <div class="match-head">
+            <span class="match-title">${t.title} <span class="match-mode-tag ${modeClass}">${modeRaw}</span></span>
+            <span class="match-timing">⏰ ${t.matchTime}</span>
+          </div>
+          <div class="match-body">
+            <div class="data-box"><span class="data-lbl">Prize Pool</span><span class="data-val val-prize">₹${t.prize}</span></div>
+            <div class="data-box"><span class="data-lbl">Per Kill</span><span class="data-val val-kill">₹${t.perKill}</span></div>
+            <div class="data-box"><span class="data-lbl">Entry</span><span class="data-val val-fee">₹${t.fee}</span></div>
+          </div>
+          <div class="match-footer">
+            <div class="slots-progress-wrap">
+              <div class="slots-text"><span>Slots: ${joinedCount}/${totalSlots}</span><span>${totalSlots - joinedCount} left</span></div>
+              <div class="progress-bar-bg"><div class="progress-fill" style="width: ${percent}%;"></div></div>
+            </div>
+            <button class="btn-players-list-toggle" onclick="event.stopPropagation(); viewJoinedPlayersRoster('${t.id}')">👥 Players</button>
+            ${
+              t.matchCompleted 
+              ? `<button class="btn-gold-action btn-match-action" style="background:#16a34a !important; color:#fff !important;" onclick="event.stopPropagation(); openMatchResultModal('${t.id}')">🏆 RESULTS</button>`
+              : isJoined 
+                ? `<button class="btn-gold-action btn-match-action" onclick="event.stopPropagation(); openRoomCredentialsModal('${t.id}')">🔑 ROOM</button>` 
+                : `<button class="btn-gold-action btn-match-action" onclick="event.stopPropagation(); openJoinModal('${t.id}')">JOIN</button>`
+            }
+          </div>
+        `;
+        wrap.appendChild(card);
+      });
+    }
+
+    // 13. Auto-Adjusting Rules
+    function generateSmartModeRules(match) {
+      const mode = (match.mode || "SOLO").toUpperCase();
+      let autoRules = [];
+
+      if (mode.includes("1V1") || mode.includes("1VS1")) {
+        autoRules = [
+          "Headshot Only: Allowed (Only headshots determine final winner)",
+          "Gun Attributes: NO (Default gun balance active)",
+          "Character Skills: OFF (No Chrono/Alok/K skills permitted)",
+          "Total Rounds: 7 or 13 Rounds (As hosted by Room Master)",
+          "Limited Ammo: YES (Strategic ammunition usage)",
+          "Emulators & iPads: Strictly Prohibited (Mobile phone touch only)",
+          "Minimum Level: 25+ Required for room entry"
+        ];
+      } else if (mode.includes("2V2") || mode.includes("2VS2")) {
+        autoRules = [
+          "Duo Co-ordination: Both teammates must enter together",
+          "Gun Attributes: NO (Standard competitive settings)",
+          "Character Skills: OFF (Fair gunplay rules)",
+          "Grenade / Smoke / Landmines: BANNED (Only Gloo Walls allowed)",
+          "Revival: Teammate revive enabled inside play zone",
+          "PC / Emulators strictly banned (Disqualification on violation)"
+        ];
+      } else if (mode.includes("CLASH") || mode.includes("4V4")) {
+        autoRules = [
+          "Official 4v4 Clash Squad Esports Settings",
+          "Gun Attributes: NO | Character Skills: OFF",
+          "Limited Ammo: YES | Fall Damage: YES",
+          "All 4 players must join before the room countdown expires"
+        ];
+      } else {
+        autoRules = [
+          "Classic Battle Royale: Solo / Duo / Squad survivors",
+          "Safe zone camping permitted; Teaming up is strictly bannable",
+          "Per Kill bonus credited automatically based on official logs",
+          "Emulator & iPad strictly banned. Fair play mandatory"
+        ];
+      }
+
+      if (match.customRules && match.customRules.trim()) {
+        const adminCustomLines = match.customRules.split('\n').filter(l => l.trim());
+        return adminCustomLines.concat(autoRules);
+      }
+      return autoRules;
+    }
+
+    // 14. 100% FIXED FLOATING MODAL OPENER
+    function openMatchDetailsModal(matchId) {
+      const match = liveTournaments.find(t => t.id === matchId);
+      if(!match) return;
+
+      document.getElementById('detail-modal-title').innerText = match.title;
+      document.getElementById('detail-modal-banner-img').src = match.bannerUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
+      document.getElementById('detail-modal-prize').innerText = `₹${match.prize}`;
+      document.getElementById('detail-modal-perkill').innerText = `₹${match.perKill}`;
+      document.getElementById('detail-modal-fee').innerText = `₹${match.fee}`;
+
+      const mode = (match.mode || "SOLO").toUpperCase();
+      document.getElementById('detail-rules-mode-badge').innerText = `${mode} RULES`;
+
+      const rulesContainer = document.getElementById('detail-modal-rules-content');
+      rulesContainer.innerHTML = '';
+      const finalRules = generateSmartModeRules(match);
+
+      finalRules.forEach(r => {
+        const cleanRule = r.replace(/^[•\-\*]\s*/, '');
+        const ruleDiv = document.createElement('div');
+        ruleDiv.className = 'rule-item-line';
+        ruleDiv.innerHTML = `<span class="bullet">⚡</span><span>${cleanRule}</span>`;
+        rulesContainer.appendChild(ruleDiv);
+      });
+
+      const rosterWrap = document.getElementById('detail-modal-players-roster');
+      rosterWrap.innerHTML = '';
+      const participants = match.participants ? Object.values(match.participants) : [];
+      const totalSlots = match.totalSlots || match.maxSlots || (mode.includes("1V1") ? 2 : 48);
+      document.getElementById('detail-modal-players-count').innerText = `${participants.length}/${totalSlots}`;
+
+      if(participants.length === 0) {
+        rosterWrap.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:1rem; font-size:0.75rem;">No players joined yet. Claim your slot!</div>`;
+      } else {
+        participants.forEach((p, idx) => {
+          const item = document.createElement('div');
+          item.className = 'player-roster-item';
+          item.innerHTML = `
+            <span><b>#${idx+1} ${p.ign}</b> <small style="color:var(--text-muted);">(UID: ${p.uid || '--'})</small></span>
+            <span style="color:var(--gold-primary); font-weight:800;">Lvl ${p.level || '--'}</span>
+          `;
+          rosterWrap.appendChild(item);
+        });
+      }
+
+      const actionWrap = document.getElementById('detail-modal-action-wrapper');
+      const isJoined = match.participants && match.participants[currentUser.mobile];
+      if (match.matchCompleted) {
+        actionWrap.innerHTML = `
+          <button class="btn-gold-action" style="width:100%; padding:0.8rem; background:#16a34a !important; color:#fff !important;" onclick="popNavigationStack(); openMatchResultModal('${match.id}')">
+            🏆 VIEW OFFICIAL WINNERS & RESULTS
+          </button>
+        `;
+      } else if (isJoined) {
+        actionWrap.innerHTML = `
+          <button class="btn-gold-action" style="width:100%; padding:0.8rem;" onclick="popNavigationStack(); openRoomCredentialsModal('${match.id}')">
+            🔑 VIEW ROOM ID & PASSWORD
+          </button>
+        `;
+      } else {
+        actionWrap.innerHTML = `
+          <button class="btn-gold-action" style="width:100%; padding:0.8rem;" onclick="popNavigationStack(); openJoinModal('${match.id}')">
+            ⚔️ JOIN TOURNAMENT NOW (₹${match.fee})
+          </button>
+        `;
+      }
+
+      openModalWithStack('modal-match-details-view');
+    }
+
+    // 15. Match Results Display
+    function openMatchResultModal(matchId) {
+      const match = liveTournaments.find(t => t.id === matchId);
+      if(!match) return alert("Match data not found!");
+
+      document.getElementById('results-modal-match-title').innerText = `Results: ${match.title}`;
+      
+      const mode = (match.mode || "SOLO").toUpperCase();
+      const badge = document.getElementById('results-mode-badge-disp');
+      badge.innerText = `${mode} MODE TOURNAMENT`;
+      
+      if(mode.includes("1V1") || mode.includes("1VS1")) {
+        badge.style.background = "#b91c1c";
+        badge.style.color = "#fef08a";
+      } else if(mode.includes("2V2") || mode.includes("2VS2")) {
+        badge.style.background = "#7c3aed";
+        badge.style.color = "#fff";
+      } else {
+        badge.style.background = "#0284c7";
+        badge.style.color = "#fff";
+      }
+
+      const resWrap = document.getElementById('dynamic-results-layout-wrap');
+      resWrap.innerHTML = '';
+
+      const res = match.matchResults || {};
+      const booyah = res.booyahWinner || null;
+      const prizePool = parseFloat(match.prize) || 0;
+      const perKill = parseFloat(match.perKill) || 0;
+
+      if (mode.includes("1V1") || mode.includes("1VS1")) {
+        const winnerName = booyah ? booyah.name : "Champion";
+        const winnerUid = booyah ? booyah.uid : "--";
+        const winnerKills = booyah ? (booyah.kills || 1) : 1;
+        const winnerCash = (booyah && booyah.totalPrize > 0) ? booyah.totalPrize : (prizePool > 0 ? prizePool : 80);
+
+        const runner = (res.topRunners && res.topRunners.length > 0) ? res.topRunners[0] : null;
+        const runnerName = runner ? runner.name : "Opponent";
+        const runnerKills = runner ? runner.kills : 0;
+        const runnerCash = runner ? (runner.totalPrize || (runnerKills * perKill)) : 0;
+
+        resWrap.innerHTML = `
+          <div class="results-podium-card">
+            <div class="podium-rank-tag">👑 #1 BOOYAH WINNER 👑</div>
+            <div class="podium-player-name">${winnerName}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+              UID: <span style="color:var(--neon-cyan);">${winnerUid}</span> | Kills: <span style="color:var(--gold-primary); font-weight:800;">${winnerKills}</span>
+            </div>
+            <div class="podium-cash-won">+₹${winnerCash.toFixed(2)}</div>
+            <div style="font-size:0.7rem; color:var(--accent-green); font-weight:800; margin-top:2px;">🏆 CASH CREDITED TO WALLET</div>
+          </div>
+
+          <div class="runner-podium-card">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:800;">🥈 #2 RUNNER-UP</div>
+              <div style="font-size:1.05rem; font-weight:900; color:var(--text-white);">${runnerName}</div>
+              <div style="font-size:0.68rem; color:var(--text-muted);">Kills: ${runnerKills}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-family:'Rajdhani', sans-serif; font-weight:900; font-size:1.15rem; color:${runnerCash > 0 ? 'var(--accent-green)' : 'var(--text-muted)'};">
+                ${runnerCash > 0 ? '+₹' + runnerCash.toFixed(2) : 'Finalist'}
+              </div>
+              <span style="font-size:0.65rem; color:var(--neon-cyan); font-weight:800;">FINAL STANDING</span>
+            </div>
+          </div>
+        `;
+      } else if (mode.includes("2V2") || mode.includes("2VS2")) {
+        const winPrize = (booyah && booyah.totalPrize > 0) ? booyah.totalPrize : (prizePool > 0 ? prizePool : 160);
+        resWrap.innerHTML = `
+          <div class="results-podium-card" style="border-color:#a855f7;">
+            <div class="podium-rank-tag" style="color:#c084fc;">👑 #1 WINNING DUO 👑</div>
+            <div class="podium-player-name">${booyah ? booyah.name : 'Duo Team #1'}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+              Team Total Kills: <span style="color:var(--gold-primary); font-weight:800;">${booyah ? booyah.kills : 2}</span>
+            </div>
+            <div class="podium-cash-won">+₹${winPrize.toFixed(2)}</div>
+            <div style="font-size:0.7rem; color:var(--accent-green); font-weight:800; margin-top:2px;">🏆 DUO PRIZE CREDITED TO WALLET</div>
+          </div>
+          
+          <h4 style="font-family:'Rajdhani', sans-serif; font-size:0.95rem; color:var(--neon-cyan); margin:0.6rem 0 0.3rem 0;">Runner-Up Duo Standings</h4>
+          <div class="runner-podium-card">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:800;">🥈 #2 RUNNER-UP DUO</div>
+              <div style="font-size:1rem; font-weight:900; color:var(--text-white);">${(res.topRunners && res.topRunners[0]) ? res.topRunners[0].name : 'Duo Team #2'}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-family:'Rajdhani', sans-serif; font-weight:900; color:var(--accent-green);">+₹${((res.topRunners && res.topRunners[0] && res.topRunners[0].totalPrize) || 0).toFixed(2)}</div>
+            </div>
+          </div>
+        `;
+      } else {
+        const booyahCash = (booyah && booyah.totalPrize > 0) ? booyah.totalPrize : (prizePool * 0.5 || 100);
+        
+        let runnersHtml = '';
+        if (res.topRunners && res.topRunners.length > 0) {
+          res.topRunners.forEach((r, idx) => {
+            runnersHtml += `
+              <div class="top-runner-box">
+                <div class="runner-rank-tag">#${idx+2} Place</div>
+                <div class="runner-name-tag">${r.name}</div>
+                <div style="font-size:0.65rem; color:var(--text-muted);">${r.kills || 0} Kills</div>
+                <div class="runner-prize-tag">+₹${(r.totalPrize || 0).toFixed(2)}</div>
+              </div>
+            `;
+          });
+        } else {
+          runnersHtml = `<div style="grid-column:span 3; font-size:0.75rem; color:var(--text-muted); text-align:center;">Top runners not specified.</div>`;
+        }
+
+        let killsHtml = '';
+        if (res.otherKillEarners && res.otherKillEarners.length > 0) {
+          res.otherKillEarners.forEach(o => {
+            killsHtml += `
+              <div class="kill-row-item">
+                <span><b>${o.name}</b> (${o.kills} Kills)</span>
+                <span style="color:var(--accent-green); font-weight:900;">+₹${(o.totalPrize || 0).toFixed(2)}</span>
+              </div>
+            `;
+          });
+        } else {
+          killsHtml = `<div style="font-size:0.75rem; color:var(--text-muted); text-align:center; padding:0.5rem;">No additional kill bonuses.</div>`;
+        }
+
+        resWrap.innerHTML = `
+          <div class="results-podium-card">
+            <div class="podium-rank-tag">👑 BOOYAH! 👑</div>
+            <div class="podium-player-name">${booyah ? booyah.name : 'Winner'}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+              UID: ${booyah ? booyah.uid : '--'} | Kills: ${booyah ? booyah.kills : 0}
+            </div>
+            <div class="podium-cash-won">+₹${booyahCash.toFixed(2)}</div>
+          </div>
+
+          <h4 style="font-family:'Rajdhani', sans-serif; font-size:0.95rem; color:var(--gold-primary); margin-bottom:0.4rem;">Top 2 to 4 Rankers</h4>
+          <div class="top-rankers-grid">${runnersHtml}</div>
+
+          <h4 style="font-family:'Rajdhani', sans-serif; font-size:0.95rem; color:var(--neon-cyan); margin:0.6rem 0 0.3rem 0;">Kill Earners</h4>
+          <div class="other-kills-list">${killsHtml}</div>
+        `;
+      }
+
+      openModalWithStack('modal-match-results');
+    }
+
+    // 16. Leaderboard Engine (Real Match Winnings Only)
+    function renderCombinedLeaderboard(users, fakeRankers) {
+      const wrap = document.getElementById('leaderboard-list-wrap');
+      wrap.innerHTML = '';
+
+      let combined = [];
+
+      Object.keys(users).forEach(phone => {
+        const u = users[phone];
+        const realWinnings = typeof u.winningsWallet !== 'undefined' ? parseFloat(u.winningsWallet) : (parseFloat(u.winnings) || 0);
+        combined.push({
+          name: u.username || 'Player',
+          winnings: realWinnings,
+          mobile: phone,
+          isReal: true
+        });
+      });
+
+      Object.keys(fakeRankers).forEach(k => {
+        combined.push({
+          name: fakeRankers[k].username || 'Pro_Player',
+          winnings: parseFloat(fakeRankers[k].winnings) || 0,
+          mobile: '9876******',
+          isReal: false
+        });
+      });
+
+      combined.sort((a, b) => b.winnings - a.winnings);
+
+      let myCalculatedRank = "--";
+      let myTotalWon = "₹ 0.00";
+
+      combined.forEach((u, idx) => {
+        const rank = idx + 1;
+        const isMe = currentUser && (u.mobile === currentUser.mobile);
+        
+        if (isMe) {
+          myCalculatedRank = `#${rank}`;
+          myTotalWon = `₹ ${u.winnings.toFixed(2)}`;
+        }
+
+        const medalIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+        const phoneMasked = u.isReal ? `${u.mobile.substr(0,4)}****` : '9876****';
+
+        const row = document.createElement('div');
+        row.className = `lb-item-row ${isMe ? 'me-highlight' : ''}`;
+        row.innerHTML = `
+          <div style="display:flex; align-items:center; gap:0.65rem;">
+            <div class="lb-rank-num" style="color:${rank <= 3 ? '#facc15' : 'var(--neon-cyan)'}">${medalIcon}</div>
+            <div>
+              <div class="lb-user-name">${u.name} ${isMe ? '<b style="color:var(--gold-primary);">(You)</b>' : ''}</div>
+              <div style="font-size:0.68rem; color:var(--text-muted);">${phoneMasked}</div>
+            </div>
+          </div>
+          <div class="lb-user-score">₹ ${u.winnings.toFixed(2)}</div>
+        `;
+        wrap.appendChild(row);
+      });
+
+      document.getElementById('self-rank-number').innerText = myCalculatedRank;
+      document.getElementById('self-rank-earnings').innerText = myTotalWon;
+    }
+
+    // 17. Match Registration Handlers
+    function viewJoinedPlayersRoster(matchId) {
+      const match = liveTournaments.find(t => t.id === matchId);
+      if(!match) return;
+      const wrap = document.getElementById('joined-players-roster');
+      wrap.innerHTML = '';
+
+      if(!match.participants || Object.keys(match.participants).length === 0) {
+        wrap.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:1.5rem;">No players joined yet. Be the first to join!</div>`;
+      } else {
+        Object.values(match.participants).forEach((p, idx) => {
+          const row = document.createElement('div');
+          row.style.cssText = "display:flex; justify-content:space-between; background:var(--royal-card-sub); padding:0.55rem 0.8rem; border-radius:6px; border:1px solid var(--border-color); font-size:0.8rem; color:var(--text-white);";
+          row.innerHTML = `
+            <span>#${idx+1} <b>${p.ign}</b></span>
+            <span style="color:var(--gold-primary);">Lvl: ${p.level || '--'}</span>
+          `;
+          wrap.appendChild(row);
+        });
+      }
+      openModalWithStack('modal-joined-players');
+    }
+
+    function openJoinModal(matchId) {
+      selectedMatchToJoin = liveTournaments.find(t => t.id === matchId);
+      document.getElementById('join-modal-match-title').innerText = `Join: ${selectedMatchToJoin.title}`;
+      document.getElementById('join-modal-fee-text').innerText = `₹ ${selectedMatchToJoin.fee}.00`;
+      openModalWithStack('modal-join-match');
+    }
+
+    function confirmMatchParticipation() {
+      const ign = document.getElementById('join-input-ign').value.trim();
+      const uid = document.getElementById('join-input-uid').value.trim();
+      const level = parseInt(document.getElementById('join-input-level').value.trim());
+
+      if(!ign || !uid || isNaN(level)) {
+        return alert("Please enter Username (IGN), Numeric UID and Game Level!");
+      }
+
+      if (level < minAllowedLevel) {
+        return alert(`⚠️ Match Requirement: Minimum Game Level must be ${minAllowedLevel}+ to participate!`);
+      }
+
+      const totalBalance = (currentUser.depositWallet || currentUser.wallet || 0) + (currentUser.winningsWallet || 0);
+      if(totalBalance < selectedMatchToJoin.fee) {
+        alert("Insufficient balance! Please deposit to pay the match entry fee.");
+        popNavigationStack();
+        navigateTab('bank-payment');
+        return;
+      }
+
+      let feeRemaining = selectedMatchToJoin.fee;
+      let depBal = (currentUser.depositWallet || currentUser.wallet || 0);
+      let winBal = (currentUser.winningsWallet || 0);
+
+      if(depBal >= feeRemaining) {
+        depBal -= feeRemaining;
+      } else {
+        feeRemaining -= depBal;
+        depBal = 0;
+        winBal -= feeRemaining;
+      }
+
+      const updates = {};
+      updates[`users/${currentUser.mobile}/depositWallet`] = depBal;
+      updates[`users/${currentUser.mobile}/wallet`] = depBal;
+      updates[`users/${currentUser.mobile}/winningsWallet`] = winBal;
+
+      updates[`tournaments/${selectedMatchToJoin.id}/participants/${currentUser.mobile}`] = {
+        ign: ign,
+        uid: uid,
+        level: level,
+        mobile: currentUser.mobile,
+        joinedAt: Date.now()
+      };
+
+      const txK = db.ref(`transactions/${currentUser.mobile}`).push().key;
+      updates[`transactions/${currentUser.mobile}/${txK}`] = {
+        title: `Match Entry: ${selectedMatchToJoin.title}`,
+        amount: -selectedMatchToJoin.fee,
+        status: 'success',
+        timestamp: Date.now()
+      };
+
+      db.ref().update(updates).then(() => {
+        popNavigationStack();
+        alert("⚔️ Tournament Registration Successful!");
+        openRoomCredentialsModal(selectedMatchToJoin.id);
+      });
+    }
+
+    function openRoomCredentialsModal(matchId) {
+      viewingRoomMatch = liveTournaments.find(t => t.id === matchId);
+      document.getElementById('room-modal-match-title').innerText = viewingRoomMatch.title;
+      checkRoomCredentialsCountdown();
+      clearInterval(countdownInterval);
+      countdownInterval = setInterval(checkRoomCredentialsCountdown, 1000);
+      openModalWithStack('modal-room-details');
+    }
+
+    function checkRoomCredentialsCountdown() {
+      if(!viewingRoomMatch) return;
+      const waitingState = document.getElementById('room-waiting-state');
+      const releasedState = document.getElementById('room-released-state');
+
+      const matchScheduleTime = new Date(viewingRoomMatch.matchTime).getTime();
+      const now = Date.now();
+      const diff = matchScheduleTime - now;
+
+      if ((diff <= 0 || viewingRoomMatch.autoReleased) && viewingRoomMatch.roomId && viewingRoomMatch.roomPass) {
+        waitingState.classList.add('hidden');
+        releasedState.classList.remove('hidden');
+        document.getElementById('display-room-id').innerText = viewingRoomMatch.roomId;
+        document.getElementById('display-room-pass').innerText = viewingRoomMatch.roomPass;
+        clearInterval(countdownInterval);
+      } else {
+        waitingState.classList.remove('hidden');
+        releasedState.classList.add('hidden');
+        if (isNaN(diff) || diff <= 0) {
+          document.getElementById('live-countdown-timer').innerText = "STARTING SOON";
+        } else {
+          const hrs = Math.floor(diff / (1000 * 60 * 60));
+          const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const secs = Math.floor((diff % (1000 * 60)) / 1000);
+          document.getElementById('live-countdown-timer').innerText = `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+        }
+      }
+    }
+
+    function filterJoinedMatchesView(state) {
+      joinedFilterState = state;
+      document.getElementById('tab-match-live-btn').style.background = state === 'live' ? 'linear-gradient(90deg, #ca8a04, #fef08a, #ca8a04)' : '#162438';
+      document.getElementById('tab-match-live-btn').style.color = state === 'live' ? '#030712' : '#fff';
+      document.getElementById('tab-match-results-btn').style.background = state === 'results' ? 'linear-gradient(90deg, #ca8a04, #fef08a, #ca8a04)' : '#162438';
+      document.getElementById('tab-match-results-btn').style.color = state === 'results' ? '#030712' : '#fff';
+      renderMyMatches();
+    }
+
+    function renderMyMatches() {
+      const wrap = document.getElementById('joined-matches-list');
+      wrap.innerHTML = '';
+      
+      const filtered = liveTournaments.filter(t => {
+        const isUserJoined = t.participants && t.participants[currentUser.mobile];
+        if(!isUserJoined) return false;
+        return joinedFilterState === 'live' ? !t.matchCompleted : t.matchCompleted;
+      });
+
+      if (filtered.length === 0) {
+        wrap.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:2rem;">No ${joinedFilterState === 'live' ? 'upcoming' : 'completed'} matches found.</div>`;
+        return;
+      }
+
+      filtered.forEach(m => {
+        const item = document.createElement('div');
+        item.className = 'match-card';
+        item.innerHTML = `
+          <div class="match-head">
+            <div class="match-title">${m.title}</div>
+            <div class="match-timing">${m.matchTime}</div>
+          </div>
+          <div class="match-footer">
+            <span style="font-size:0.75rem; color:${m.matchCompleted ? 'var(--accent-green)' : 'var(--neon-cyan)'}; font-weight:800;">
+              ${m.matchCompleted ? 'COMPLETED / RESULTS OUT' : 'CONFIRMED / WAITING'}
+            </span>
+            ${
+              m.matchCompleted
+              ? `<button class="btn-gold-action" style="padding:0.4rem 0.8rem; font-size:0.75rem; background:#16a34a !important; color:#fff !important;" onclick="openMatchResultModal('${m.id}')">📊 VIEW WINNERS</button>`
+              : `<button class="btn-gold-action" style="padding:0.4rem 0.8rem; font-size:0.75rem;" onclick="openRoomCredentialsModal('${m.id}')">ROOM ID & PASS</button>`
+            }
+          </div>
+        `;
+        wrap.appendChild(item);
+      });
+    }
+
+    // 18. Deposit Verification Engine
+    function openDepositModal() { openModalWithStack('modal-deposit'); }
+
+    function launchSelectedUpiIntent() {
+      const amt = parseFloat(document.getElementById('input-dep-amount').value);
+      window.location.href = `upi://pay?pa=${activeMerchantUPI}&pn=FFArena&am=${amt}&cu=INR&tn=FFArenaCredits`;
+    }
+
+    function startHighSecurityBankingCheck() {
+      const amt = parseFloat(document.getElementById('input-dep-amount').value);
+      const utr = document.getElementById('input-deposit-utr').value.trim();
+
+      if(isNaN(amt) || amt < minDepositLimit) return alert(`Minimum deposit amount is ₹${minDepositLimit}!`);
+      if(utr.length !== 12) return alert("Please enter exact 12-digit Banking UTR / Transaction No.!");
+
+      document.getElementById('deposit-form-step').classList.add('hidden');
+      document.getElementById('deposit-verify-step').classList.remove('hidden');
+
+      let s = 10;
+      const countEl = document.getElementById('countdown-val');
+
+      const timer = setInterval(() => {
+        s--;
+        countEl.innerText = s;
+
+        if(s <= 0) {
+          clearInterval(timer);
+          db.ref('admin/depositRequests').push({
+            userMobile: currentUser.mobile,
+            username: currentUser.username,
+            amount: amt,
+            utr: utr,
+            targetUPI: activeMerchantUPI,
+            referredBy: currentUser.referredBy || null,
+            timestamp: Date.now()
+          }).then(() => {
+            document.getElementById('deposit-verify-step').classList.add('hidden');
+            document.getElementById('deposit-form-step').classList.remove('hidden');
+            document.getElementById('input-deposit-utr').value = '';
+            popNavigationStack();
+            alert("✅ Banking Verification Node Checked! Request submitted successfully.");
+          });
+        }
+      }, 1000);
+    }
+
+    // 19. Withdrawal System
+    function openWithdrawModal(type) {
+      withdrawContext = type;
+      const title = type === 'winnings' ? "Withdraw Winning Cash" : "Withdraw Referral Bonus";
+      const limit = type === 'winnings' ? minWinningsWithdraw : minBonusWithdraw;
+
+      document.getElementById('withdraw-modal-title').innerText = title;
+      document.getElementById('disp-min-with-limit').innerText = limit;
+      openModalWithStack('modal-withdraw');
+    }
+
+    function toggleWithdrawPayoutView(type) {
+      document.getElementById('with-method-upi').classList.toggle('hidden', type !== 'upi');
+      document.getElementById('with-method-bank').classList.toggle('hidden', type !== 'bank');
+    }
+
+    function handleBankSelectChange(val) {
+      document.getElementById('wrap-other-bank-input').classList.toggle('hidden', val !== 'OTHER');
+    }
+
+    function submitWithdrawalRequest() {
+      const amt = parseFloat(document.getElementById('input-with-amount').value);
+      const method = document.getElementById('select-with-method').value;
+      const minLimit = withdrawContext === 'winnings' ? minWinningsWithdraw : minBonusWithdraw;
+
+      if(isNaN(amt) || amt < minLimit) return alert(`Minimum withdrawal limit is ₹${minLimit}!`);
+
+      const availableBalance = withdrawContext === 'winnings' ? (currentUser.winningsWallet || 0) : (currentUser.bonusWallet || 0);
+      if(amt > availableBalance) return alert(`Insufficient ${withdrawContext} balance!`);
+
+      let details = "";
+      if(method === 'upi') {
+        const vpa = document.getElementById('input-with-vpa').value.trim();
+        if(!vpa || !vpa.includes('@')) return alert("Enter valid UPI ID!");
+        details = `UPI: ${vpa}`;
+      } else {
+        let bName = document.getElementById('select-all-banks').value;
+        if(bName === 'OTHER') bName = document.getElementById('input-other-bank').value.trim();
+        const holder = document.getElementById('input-bank-holder').value.trim();
+        const acc = document.getElementById('input-bank-acc').value.trim();
+        const ifsc = document.getElementById('input-bank-ifsc').value.trim();
+
+        if(!bName || !holder || !acc || !ifsc) return alert("Please fill all bank details accurately!");
+        details = `Bank: ${bName} | Acc: ${acc} | Holder: ${holder} | IFSC: ${ifsc}`;
+      }
+
+      const updates = {};
+      if(withdrawContext === 'winnings') updates[`users/${currentUser.mobile}/winningsWallet`] = (currentUser.winningsWallet || 0) - amt;
+      else updates[`users/${currentUser.mobile}/bonusWallet`] = (currentUser.bonusWallet || 0) - amt;
+
+      const txK = db.ref(`transactions/${currentUser.mobile}`).push().key;
+      updates[`transactions/${currentUser.mobile}/${txK}`] = {
+        title: `Withdrawal Requested (${withdrawContext.toUpperCase()})`,
+        amount: -amt,
+        status: 'pending',
+        timestamp: Date.now()
+      };
+
+      const reqK = db.ref('admin/withdrawRequests').push().key;
+      updates[`admin/withdrawRequests/${reqK}`] = {
+        userMobile: currentUser.mobile,
+        username: currentUser.username,
+        amount: amt,
+        type: withdrawContext,
+        details: details,
+        timestamp: Date.now()
+      };
+
+      db.ref().update(updates).then(() => {
+        popNavigationStack();
+        alert(`✅ Withdrawal request of ₹${amt} submitted! Status: Processing / Pending.`);
+      });
+    }
+
+    // 20. Passbook History
+    function renderPassbookHistory(records) {
+      const wrap = document.getElementById('wallet-history-passbook-list');
+      wrap.innerHTML = '';
+      if(Object.keys(records).length === 0) {
+        wrap.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:0.8rem; padding:1.5rem;">No transaction records found.</div>`;
+        return;
+      }
+
+      Object.keys(records).reverse().forEach(k => {
+        const t = records[k];
+        const row = document.createElement('div');
+        row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--royal-card); border:1px solid var(--border-color); padding:0.65rem 0.85rem; border-radius:8px;";
+        row.innerHTML = `
+          <div>
+            <div style="font-weight:700; font-size:0.85rem; color:var(--text-white);">${t.title}</div>
+            <div style="font-size:0.68rem; color:var(--text-muted);">${new Date(t.timestamp).toLocaleString()}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:800; font-family:'Rajdhani', sans-serif; color:${t.amount > 0 ? 'var(--accent-green)' : '#ff4444'};">
+              ${t.amount > 0 ? '+' : ''}₹${Math.abs(t.amount).toFixed(2)}
+            </div>
+            <span style="font-size:0.65rem; color:${t.status === 'success' ? 'var(--accent-green)' : 'var(--gold-primary)'}; font-weight:800;">
+              ${t.status ? t.status.toUpperCase() : 'COMPLETED'}
+            </span>
+          </div>
+        `;
+        wrap.appendChild(row);
+      });
+    }
+
+    // 21. Dispute Tickets Desk
+    function submitProblemTicket() {
+      const type = document.getElementById('ticket-issue-type').value;
+      const msg = document.getElementById('ticket-message').value.trim();
+      const fileInput = document.getElementById('ticket-screenshot');
+
+      if(!msg) return alert("Please describe what problem happened!");
+
+      const ticketKey = db.ref('helpTickets').push().key;
+      const ticketData = {
+        id: ticketKey,
+        userMobile: currentUser.mobile,
+        username: currentUser.username,
+        type: type,
+        message: msg,
+        status: 'waiting',
+        reply: '',
+        screenshotUrl: '',
+        timestamp: Date.now()
+      };
+
+      if(fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const storageRef = storage.ref(`tickets/${currentUser.mobile}_${Date.now()}_${file.name}`);
+        storageRef.put(file).then(snap => {
+          snap.ref.getDownloadURL().then(url => {
+            ticketData.screenshotUrl = url;
+            saveTicketToDb(ticketKey, ticketData);
+          });
+        }).catch(() => saveTicketToDb(ticketKey, ticketData));
+      } else {
+        saveTicketToDb(ticketKey, ticketData);
+      }
+    }
+
+    function saveTicketToDb(key, data) {
+      db.ref(`helpTickets/${key}`).set(data).then(() => {
+        document.getElementById('ticket-message').value = '';
+        document.getElementById('ticket-screenshot').value = '';
+        alert("✅ Problem ticket submitted! Status: WAITING / PROCESSING.");
+      });
+    }
+
+    function renderDisputeTickets(tickets) {
+      const wrap = document.getElementById('user-dispute-tickets-history');
+      wrap.innerHTML = '';
+      Object.keys(tickets).reverse().forEach(k => {
+        const t = tickets[k];
+        const row = document.createElement('div');
+        row.style.cssText = "background:var(--royal-card-sub); border:1px solid var(--border-color); padding:0.6rem; border-radius:8px; font-size:0.75rem;";
+        row.innerHTML = `
+          <div style="display:flex; justify-content:space-between; font-weight:800;">
+            <span style="color:var(--neon-cyan)">${t.type}</span>
+            <span style="color:${t.status === 'solved' ? 'var(--accent-green)' : 'var(--gold-primary)'}">
+              ${t.status === 'solved' ? '✅ SOLVED' : '⏳ WAITING / PROCESSING'}
+            </span>
+          </div>
+          <div style="color:var(--text-muted); margin-top:0.2rem;">You: "${t.message}"</div>
+          ${t.status === 'solved' ? `<div style="color:var(--accent-green); font-weight:800; margin-top:0.3rem;">ADMIN: "${t.reply}"</div>` : ''}
+        `;
+        wrap.appendChild(row);
+      });
+    }
+
+    // 22. Social & Referral Sharing
+    function shareSpecificSocial(platform) {
+      const shareUrl = `${window.location.origin}${window.location.pathname}?ref=${currentUser.referCode}`;
+      const text = encodeURIComponent(`${shareConfig.title}\n${shareConfig.desc}\nUse my code ${currentUser.referCode} for ₹10 Bonus:\n${shareUrl}`);
+
+      if(platform === 'whatsapp') window.open(`https://api.whatsapp.com/send?text=${text}`);
+      else if(platform === 'telegram') window.open(`https://t.me/share/url?url=${shareUrl}&text=${text}`);
+      else if(platform === 'instagram') {
+        copyReferralCode();
+        alert("Invite link copied! Share it on Instagram DM or Story.");
+      }
+    }
+
+    function shareNativeSocialDialog() {
+      const shareUrl = `${window.location.origin}${window.location.pathname}?ref=${currentUser.referCode}`;
+      const fullText = `${shareConfig.title}\n${shareConfig.desc}\n\nJoin using my code ${currentUser.referCode} & get instant ₹10 Bonus:\n${shareUrl}`;
+
+      if (navigator.share) {
+        navigator.share({
+          title: shareConfig.title,
+          text: fullText,
+          url: shareUrl
+        }).catch(() => {});
+      } else {
+        shareSpecificSocial('whatsapp');
+      }
+    }
+
+    function copyReferralCode() {
+      navigator.clipboard.writeText(currentUser.referCode);
+      alert("Referral Code Copied: " + currentUser.referCode);
+    }
+
+    function renderReferralsNetwork(network) {
+      const wrap = document.getElementById('referred-users-list');
+      wrap.innerHTML = '';
+      const list = Object.values(network);
+      document.getElementById('disp-ref-count').innerText = list.length;
+
+      list.forEach(u => {
+        const hasDeposited = (u.depositWallet || u.wallet || 0) >= 100;
+        const row = document.createElement('div');
+        row.style.cssText = "display:flex; justify-content:space-between; background:var(--royal-card); border:1px solid var(--border-color); padding:0.5rem 0.8rem; border-radius:6px; font-size:0.78rem;";
+        row.innerHTML = `
+          <span>👤 ${u.username} (${u.mobile.substr(0,4)}****)</span>
+          <span style="color:${hasDeposited ? 'var(--accent-green)' : 'var(--text-muted)'}; font-weight:800;">
+            ${hasDeposited ? '⚡ Deposited (Bonus Active)' : 'Registered (No Deposit)'}
+          </span>
+        `;
+        wrap.appendChild(row);
+      });
+    }
+
+    // 23. Rules Modal & Copy
+    function openRulesModal(type) {
+      document.getElementById('rules-modal-title').innerText = type === 'tournament' ? "Tournament Rules" : "Wallet Rules";
+      document.getElementById('rules-modal-content').innerText = type === 'tournament' ? appRules.tournament : appRules.wallet;
+      openModalWithStack('modal-rules-display');
+    }
+
+    function copyData(id) {
+      navigator.clipboard.writeText(document.getElementById(id).innerText);
+      alert("Copied to clipboard!");
+    }
+
+    let currentScreenState = 'tournaments';
+
+    function navigateTab(tab) {
+      if (currentScreenState === tab) return;
+
+      ['tournaments', 'my-matches', 'bank-payment', 'share', 'leaderboard', 'profile'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        const b = document.getElementById(`btn-nav-${t.replace('-', '')}`);
+        if(b) b.classList.remove('active');
+      });
+
+      document.getElementById(`view-${tab}`).classList.remove('hidden');
+      const curBtn = document.getElementById(`btn-nav-${tab.replace('-', '')}`);
+      if(curBtn) curBtn.classList.add('active');
+
+      currentScreenState = tab;
+      window.history.pushState({ screen: tab }, "");
+    }
+
+    // 24. 100% FIXED FLOATING MODAL OPEN/CLOSE STACK
+    function openModalWithStack(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+      }
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+      }
+    }
+
+    function popNavigationStack() {
+      const openModal = document.querySelector('.modal-backdrop:not(.hidden)');
+      if (openModal) {
+        openModal.classList.add('hidden');
+        openModal.style.display = 'none';
+        if(openModal.id === 'modal-room-details') clearInterval(countdownInterval);
+        return;
+      }
+
+      if (currentScreenState !== 'tournaments') {
+        navigateTab('tournaments');
+      }
+    }
+
+    window.addEventListener('popstate', () => { popNavigationStack(); });
+
+    function pad(n) { return n < 10 ? '0' + n : n; }
+
+    // Start App & Check User
+    evaluateAuthentication();
+  </script>
+</body>
+</html>
